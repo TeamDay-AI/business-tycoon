@@ -74,6 +74,47 @@ Use Ahrefs MCP tools to:
 - Analyze competitor games' SEO strategies
 - Find keyword opportunities in the browser game space
 
+## Umami Analytics
+
+Player analytics are tracked via **Umami Cloud**. Use the API to pull real player data.
+
+- **Website ID:** `9c33e23d-70c3-4b7b-9382-87d070d3aa7e`
+- **API Key:** `api_mtY6tzfpAIvJ8uoTe9vPO6Ax0TLAT4LZ`
+- **Share URL:** `https://cloud.umami.is/share/afxxKYPjbJgPE02d`
+- **API Base:** `https://api.umami.is/v1`
+- **Auth Header:** `x-umami-api-key: <API_KEY>`
+
+### Key API Endpoints
+
+Use `WebFetch` with header `x-umami-api-key: api_mtY6tzfpAIvJ8uoTe9vPO6Ax0TLAT4LZ` for all calls.
+
+**Active visitors right now:**
+```
+GET https://api.umami.is/v1/websites/9c33e23d-70c3-4b7b-9382-87d070d3aa7e/active
+```
+
+**Stats for a date range** (pageviews, visitors, visits, bounce rate, avg duration):
+```
+GET https://api.umami.is/v1/websites/9c33e23d-70c3-4b7b-9382-87d070d3aa7e/stats?startAt={unix_ms}&endAt={unix_ms}
+```
+
+**Pageviews over time** (unit: hour/day/month):
+```
+GET https://api.umami.is/v1/websites/9c33e23d-70c3-4b7b-9382-87d070d3aa7e/pageviews?startAt={unix_ms}&endAt={unix_ms}&unit=day
+```
+
+**Metrics breakdown** (by url, referrer, browser, os, device, country, event):
+```
+GET https://api.umami.is/v1/websites/9c33e23d-70c3-4b7b-9382-87d070d3aa7e/metrics?startAt={unix_ms}&endAt={unix_ms}&type=referrer
+```
+
+**Events** (custom game events like game-start):
+```
+GET https://api.umami.is/v1/websites/9c33e23d-70c3-4b7b-9382-87d070d3aa7e/events?startAt={unix_ms}&endAt={unix_ms}
+```
+
+**Tip:** Use `startAt` and `endAt` as Unix timestamps in milliseconds. For "last 30 days", compute `Date.now() - 30*86400000` for startAt and `Date.now()` for endAt.
+
 ## Tools Available
 
 ### EvolC Metrics MCP
@@ -99,11 +140,12 @@ Use Ahrefs MCP tools to:
 When invoked, follow this routine:
 
 1. **Check current status:** Call `get_company_status` to see latest reported data
-2. **Gather fresh data:** Use Chrome DevTools to verify the game is live and working
-3. **Check SEO:** Use Ahrefs to pull current keyword rankings and traffic estimates
-4. **Analyze:** Compare current state to previous metrics, identify trends
-5. **Report:** Push updated metrics and any notable events to EvolC
-6. **Recommend:** Provide 2-3 actionable growth recommendations
+2. **Pull Umami analytics:** Use WebFetch to call the Umami API -- get active users, last 7d and 30d stats, referrer breakdown, and custom events (game-start counts = real players)
+3. **Gather fresh data:** Use Chrome DevTools to verify the game is live and working
+4. **Check SEO:** Use Ahrefs to pull current keyword rankings and traffic estimates
+5. **Analyze:** Compare current state to previous metrics, identify trends
+6. **Report:** Push updated metrics and any notable events to EvolC (map Umami visitors to users_total, daily uniques to users_active_daily, etc.)
+7. **Recommend:** Provide 2-3 actionable growth recommendations
 
 ## Important Notes
 
