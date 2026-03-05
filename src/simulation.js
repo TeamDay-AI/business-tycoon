@@ -480,6 +480,9 @@ function processDayCycle(dt) {
       processWeek();
     }
 
+    // Check for level-up (driven by revenue/team/offices, not time)
+    showLevelIntro({ week: G.week, day: G.day });
+
     // Update analytics
     updateAnalyticsLevel();
 
@@ -510,11 +513,6 @@ function processDayCycle(dt) {
 
 function processWeek() {
   sfxWeekStart();
-  showLevelIntro({
-    week: G.week,
-    day: G.day,
-    subtitle: 'A tougher client wave begins',
-  });
 
   // Tick down weekly event buffs
   tickEventBuffs();
@@ -939,25 +937,19 @@ function updateStandup(dt) {
     G.standupTimer += dt;
     const allArrived = attending.every(a => a.state !== 'walking');
     if (allArrived || G.standupTimer > 150) {
-      // Arrange in circle around center
+      // Transition to huddle — agents stay where they are (no teleporting)
       G.standupPhase = 'huddle';
       G.standupTimer = 0;
       const cx = G.standupCenter.x;
       const cy = G.standupCenter.y;
-      const n = attending.length;
-      const radius = Math.max(1.2, Math.min(2.5, n * 0.4));
-      for (let i = 0; i < n; i++) {
-        const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-        const tx = cx + Math.cos(angle) * radius;
-        const ty = cy + Math.sin(angle) * radius;
-        attending[i].x = tx;
-        attending[i].y = ty;
-        attending[i].state = 'idle';
-        attending[i].bobY = 0;
-        // Face toward center
-        const dx = cx - tx, dy = cy - ty;
-        if (Math.abs(dx) > Math.abs(dy)) attending[i].dir = dx > 0 ? 1 : 3;
-        else attending[i].dir = dy > 0 ? 2 : 0;
+      for (const a of attending) {
+        if (a.state === 'walking') a.path = []; // stop walking if timed out
+        a.state = 'idle';
+        a.bobY = 0;
+        // Face toward meeting center
+        const dx = cx - a.x, dy = cy - a.y;
+        if (Math.abs(dx) > Math.abs(dy)) a.dir = dx > 0 ? 1 : 3;
+        else a.dir = dy > 0 ? 2 : 0;
       }
     }
   } else if (G.standupPhase === 'huddle') {
@@ -990,12 +982,16 @@ function updateStandup(dt) {
 }
 
 function endStandup() {
-  // Attending agents: release from meeting
+  // Attending agents: release from meeting and walk back to their office
   for (const a of G.agents) {
     if (a.inMeeting) {
       a.inMeeting = false;
       a.bobY = 0;
       a.state = 'idle';
+      // Walk back to their office
+      const rooms = getRoomInstances();
+      const home = rooms.find(r => r.typeKey === a.role.office);
+      if (home) a.moveToRoom(home.id);
     }
     // Everyone gets the morale boost (even those who stayed serving customers)
     a.onMeetingBoost();
@@ -1020,19 +1016,15 @@ function updateTeamBuilding(dt) {
     const allArrived = attending.every(a => a.state !== 'walking');
     if (allArrived || G.teamBuildingTimer <= (ALIGNMENT.team_building_ticks - 300)) {
       G.teamBuildingPhase = 'circle';
-      // Arrange in circle
+      // Stop walking agents and face center — no teleporting
       if (G.standupCenter) {
         const cx = G.standupCenter.x, cy = G.standupCenter.y;
-        const n = attending.length;
-        const radius = Math.max(1.2, Math.min(2.5, n * 0.4));
-        for (let i = 0; i < n; i++) {
-          const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-          attending[i].x = cx + Math.cos(angle) * radius;
-          attending[i].y = cy + Math.sin(angle) * radius;
-          attending[i].state = 'idle';
-          const dx = cx - attending[i].x, dy = cy - attending[i].y;
-          if (Math.abs(dx) > Math.abs(dy)) attending[i].dir = dx > 0 ? 1 : 3;
-          else attending[i].dir = dy > 0 ? 2 : 0;
+        for (const a of attending) {
+          if (a.state === 'walking') a.path = [];
+          a.state = 'idle';
+          const dx = cx - a.x, dy = cy - a.y;
+          if (Math.abs(dx) > Math.abs(dy)) a.dir = dx > 0 ? 1 : 3;
+          else a.dir = dy > 0 ? 2 : 0;
         }
       }
     }
@@ -1071,11 +1063,15 @@ function updateTeamBuilding(dt) {
     G.teamBuildingPhase = null;
     G.standupCenter = null;
 
+    const rooms = getRoomInstances();
     for (const a of G.agents) {
       if (a.inMeeting) {
         a.inMeeting = false;
         a.bobY = 0;
         a.state = 'idle';
+        // Walk back to their office
+        const home = rooms.find(r => r.typeKey === a.role.office);
+        if (home) a.moveToRoom(home.id);
       }
       // Everyone gets the boost (even those who stayed serving customers)
       a.onTeamBuilding();
@@ -1087,6 +1083,8 @@ function updateTeamBuilding(dt) {
       G.ceo.bobY = 0;
       G.ceo.state = 'idle';
       G.ceo.task = null;
+      const ceoRoom = rooms.find(r => r.typeKey === 'ceo');
+      if (ceoRoom) G.ceo.moveToRoom(ceoRoom.id);
     }
 
     const avgAlign = G.agents.filter(a => a.roleKey !== 'ceo').length > 0
