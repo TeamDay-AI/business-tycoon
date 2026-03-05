@@ -159,7 +159,7 @@ export const G = {
   remodelingOffices: {},            // { officeKey: daysRemaining }
   techTreeBranches: [],             // chosen branch keys (e.g. 'specialize', 'diversify_branch', 'scale_ops')
 
-  // Growth model state (SaaS/Tech Lab product-led growth)
+  // Growth model state (SaaS/AI Lab product-led growth)
   productLevel: 0,                  // 0-100 scale, SaaS/Tech only
   mrr: 0,                           // daily MRR income
   mrrHistory: [],                   // last 30 days of MRR for trending

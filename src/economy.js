@@ -652,7 +652,7 @@ export function hasProductGrowth() {
   return gm && gm.model === 'exponential';
 }
 
-// Calculate daily MRR from product level (SaaS/Tech Lab only)
+// Calculate daily MRR from product level (SaaS/AI Lab only)
 export function calculateMRR() {
   if (!hasProductGrowth()) return 0;
   const mrrPerLevel = G.companyType === 'saas_startup' ? 15 : 10;

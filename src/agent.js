@@ -4,9 +4,9 @@
 
 import {
   AGENT_ROLES, CHARACTER_NAMES, MAP_W, MAP_H, AGENT_SALARY,
-  SPEECH_WORKING, SPEECH_THINKING, SPEECH_IDLE, SPEECH_DONE,
+  SPEECH_WORKING, SPEECH_WORKING_OVERRIDES, SPEECH_THINKING, SPEECH_IDLE, SPEECH_DONE,
   SPEECH_BREAK, SPEECH_COLLAB, SPEECH_EXHAUSTED, SPEECH_SKILL_CAP,
-  SPEECH_MISALIGNED,
+  SPEECH_PROMOTED, SPEECH_MISALIGNED,
   ENERGY_DRAIN, ENERGY_RECOVERY_RATE, ENERGY_PASSIVE_RECOVERY,
   ENERGY_EXHAUSTION_THRESHOLD, ENERGY_LOW_THRESHOLD,
   SENIORITY_LEVELS, ALIGNMENT,
@@ -15,6 +15,7 @@ import { findPath } from './pathfinding.js';
 import { getWalkable, getRoomInstances } from './map.js';
 import { G } from './game.js';
 import { getTechEfficiencyBonus } from './events.js';
+import { showToast } from './ui/toast.js';
 
 /** Build a Set of "x,y" keys for tiles occupied by other agents (rounded positions). */
 function getOccupiedTiles(excludeAgent) {
@@ -329,7 +330,8 @@ export class Agent {
           this.state = 'working';
           this.workTimer = 0;
           const office = this.task?.targetOffice || this.role.office;
-          const msgs = SPEECH_WORKING[office] || SPEECH_WORKING.ceo;
+          const overrides = SPEECH_WORKING_OVERRIDES[G.companyType];
+          const msgs = (overrides && overrides[office]) || SPEECH_WORKING[office] || SPEECH_WORKING.ceo;
           this.say(pick(msgs));
         }
         break;
@@ -356,7 +358,8 @@ export class Agent {
             this.say('Making great progress! 🎵', 100); // ironic — they're building wrong thing
           } else {
             const office = this.task?.targetOffice || this.role.office;
-            const msgs = SPEECH_WORKING[office] || SPEECH_WORKING.ceo;
+            const overrides = SPEECH_WORKING_OVERRIDES[G.companyType];
+          const msgs = (overrides && overrides[office]) || SPEECH_WORKING[office] || SPEECH_WORKING.ceo;
             this.say(pick(msgs));
           }
         }
@@ -454,12 +457,17 @@ export class Agent {
     this.tasksCompleted++;
 
     // IQ-scaled skill gain, capped by maxSkill
+    // Higher IQ → faster learning: IQ 0.5 = slow learner, IQ 1.5 = fast learner
     const skillGain = 0.005 * this.iq * (1 + 0.1 * taskDifficulty);
     const prevSkill = this.skill;
     this.skill = Math.min(this.maxSkill, this.skill + skillGain);
 
-    // Notify when hitting skill cap
-    if (this.skill >= this.maxSkill - 0.01 && prevSkill < this.maxSkill - 0.01 && !this._skillCapNotified) {
+    // Check for promotion: skill exceeded current tier's promotion threshold
+    const promoted = this._checkPromotion();
+
+    if (promoted) {
+      this.say(pick(SPEECH_PROMOTED), 200);
+    } else if (this.skill >= this.maxSkill - 0.01 && prevSkill < this.maxSkill - 0.01 && !this._skillCapNotified) {
       this._skillCapNotified = true;
       this.say(pick(SPEECH_SKILL_CAP), 200);
     } else {
@@ -468,6 +476,25 @@ export class Agent {
 
     this.mood = Math.min(1.0, this.mood + 0.05);
     this.motivation = Math.min(1.0, this.motivation + 0.02); // small motivation boost from completing work
+  }
+
+  _checkPromotion() {
+    if (this.seniority >= 5) return false;
+    const tier = SENIORITY_LEVELS[this.seniority];
+    if (!tier || !tier.promoteAt) return false;
+    if (this.skill < tier.promoteAt) return false;
+
+    // Promote
+    this.seniority++;
+    const newTier = SENIORITY_LEVELS[this.seniority];
+    this._skillCapNotified = false; // reset cap notification for new tier
+    // Salary adjusts to match new seniority expectations
+    this.salary = this.expectedSalary;
+    // Motivation + mood boost from recognition
+    this.mood = Math.min(1.0, this.mood + 0.15);
+    this.motivation = Math.min(1.0, this.motivation + 0.10);
+    showToast(`⭐ ${this.name} promoted to <strong>${newTier.label}</strong>!`, { html: true });
+    return true;
   }
 
   onMeetingBoost() {

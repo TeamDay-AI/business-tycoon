@@ -207,7 +207,10 @@ export function updateAnalyticsPanel() {
 function getRecommendation() {
   const m = G.metrics;
   if (G.agents.length === 0) return '💡 Hire your first agent to get started!';
-  if (m.totalVisitors < 10) return '💡 Build a Marketing HQ for paid traffic or grow organic with Content/SEO.';
+  if (m.totalVisitors < 10) {
+    if (G.companyType === 'fashion_retail') return '💡 Build more Shopfronts and hire Shop Assistants for walk-in customers.';
+    return '💡 Build a Marketing HQ for paid traffic or grow organic with Content/SEO.';
+  }
   if (m.leads > 5 && m.closeRate < 10) return '💡 Hire a Sales Rep to improve your close rate.';
   if (m.contentQuality < 30) return '💡 Hire a Content Writer to improve organic traffic.';
   if (m.designQuality < 30) return '💡 A Designer would boost your conversion rate.';
@@ -224,7 +227,7 @@ function getGrowthModelCard() {
   let content = '';
 
   if (gm.model === 'exponential') {
-    // SaaS / Tech Lab — Product level bar + MRR trend
+    // SaaS / AI Lab — Product level bar + MRR trend
     const lvl = Math.round(G.productLevel);
     const dailyMRR = calculateMRR();
     const lvlColor = lvl > 50 ? '#50c878' : lvl > 25 ? '#e0a030' : '#5090c0';

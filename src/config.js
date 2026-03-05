@@ -114,11 +114,11 @@ export const SPEECH_QUIT_MISALIGNED = [
 
 // ─── Agent Seniority Tiers ───────────────────────────────
 export const SENIORITY_LEVELS = {
-  1: { label: 'Junior',  skillRange: [0.20, 0.40], salaryMult: 0.70, spawnWeight: 30 },
-  2: { label: 'Medior',  skillRange: [0.35, 0.55], salaryMult: 0.85, spawnWeight: 35 },
-  3: { label: 'Mid',     skillRange: [0.50, 0.70], salaryMult: 1.00, spawnWeight: 20 },
-  4: { label: 'Senior',  skillRange: [0.65, 0.85], salaryMult: 1.25, spawnWeight: 10 },
-  5: { label: 'Expert',  skillRange: [0.80, 0.95], salaryMult: 1.50, spawnWeight: 5  },
+  1: { label: 'Junior',     skillRange: [0.20, 0.40], salaryMult: 0.70, spawnWeight: 30, promoteAt: 0.42 },
+  2: { label: 'Regular',    skillRange: [0.35, 0.55], salaryMult: 0.85, spawnWeight: 35, promoteAt: 0.57 },
+  3: { label: 'Senior',     skillRange: [0.50, 0.70], salaryMult: 1.00, spawnWeight: 20, promoteAt: 0.72 },
+  4: { label: 'Lead',       skillRange: [0.65, 0.85], salaryMult: 1.25, spawnWeight: 10, promoteAt: 0.88 },
+  5: { label: 'Principal',  skillRange: [0.80, 0.95], salaryMult: 1.50, spawnWeight: 5,  promoteAt: null },
 };
 
 export function seniorityStars(level) {
@@ -770,17 +770,20 @@ export const PROJECT_TEMPLATES = [
   { name: 'Inventory Audit',   icon: '📦', basePay: -100, office: 'warehouse',   phases: ['count','reconcile','update'], time: 6,  color: '#8b7355', cost: true },
   { name: 'Fulfillment Run',   icon: '🚚', basePay: -200, office: 'warehouse',   phases: ['pick','pack','ship'], time: 8,  color: '#8b7355', cost: true },
   // Client-facing projects — only spawn when office is in delivery role (native or diversified)
-  { name: 'Executive Search',  icon: '👤', basePay: 2200, office: 'hr',          phases: ['profile','source','place'], time: 14, color: '#9080c0', clientFacing: true },
-  { name: 'Talent Placement',  icon: '🤝', basePay: 1800, office: 'hr',          phases: ['assess','match','onboard'], time: 12, color: '#9080c0', clientFacing: true },
-  { name: 'Workforce Planning',icon: '📋', basePay: 1600, office: 'hr',          phases: ['audit','forecast','plan'], time: 10, color: '#9080c0', clientFacing: true },
+  { name: 'Executive Search',    icon: '👤', basePay: 3500, office: 'hr',          phases: ['profile','source','place'], time: 14, color: '#9080c0', clientFacing: true },
+  { name: 'Talent Placement',    icon: '🤝', basePay: 2500, office: 'hr',          phases: ['assess','match','onboard'], time: 12, color: '#9080c0', clientFacing: true },
+  { name: 'Workforce Planning',  icon: '📋', basePay: 1800, office: 'hr',          phases: ['audit','forecast','plan'], time: 10, color: '#9080c0', clientFacing: true },
+  { name: 'C-Suite Placement',   icon: '🎯', basePay: 5500, office: 'hr',          phases: ['headhunt','vet','close'], time: 18, color: '#9080c0', clientFacing: true },
+  { name: 'Contract Staffing',   icon: '📋', basePay: 1200, office: 'hr',          phases: ['brief','source','deploy'], time: 6,  color: '#9080c0', clientFacing: true },
   { name: 'Financial Modeling', icon: '📈', basePay: 2500, office: 'finance',     phases: ['model','stress-test','report'], time: 14, color: '#508060', clientFacing: true },
   { name: 'Due Diligence',     icon: '🔎', basePay: 2000, office: 'finance',     phases: ['collect','analyze','findings'], time: 12, color: '#508060', clientFacing: true },
   { name: 'IP Filing',         icon: '📄', basePay: 2800, office: 'legal',       phases: ['research','draft','file'], time: 16, color: '#806090', clientFacing: true },
   { name: 'M&A Advisory',      icon: '🏛️', basePay: 3500, office: 'legal',       phases: ['assess','negotiate','close'], time: 18, color: '#806090', clientFacing: true },
   { name: 'Cloud Migration',   icon: '☁️', basePay: 2400, office: 'it',          phases: ['assess','migrate','validate'], time: 14, color: '#4080a0', clientFacing: true },
   { name: 'SOC 2 Audit',       icon: '🛡️', basePay: 2000, office: 'it',          phases: ['scope','test','certify'], time: 12, color: '#4080a0', clientFacing: true },
-  { name: 'CS Outsource',      icon: '📞', basePay: 1400, office: 'support',     phases: ['setup','train','operate'], time: 10, color: '#40b0b0', clientFacing: true },
-  { name: 'Help Desk Setup',   icon: '🖥️', basePay: 1200, office: 'support',     phases: ['design','configure','launch'], time: 8,  color: '#40b0b0', clientFacing: true },
+  { name: 'CS Outsource',      icon: '📞', basePay: 2000, office: 'support',     phases: ['setup','train','operate'], time: 10, color: '#40b0b0', clientFacing: true },
+  { name: 'Help Desk Setup',   icon: '🖥️', basePay: 1600, office: 'support',     phases: ['design','configure','launch'], time: 8,  color: '#40b0b0', clientFacing: true },
+  { name: 'BPO Contract',      icon: '🏢', basePay: 2800, office: 'support',     phases: ['scope','staff','launch'], time: 14, color: '#40b0b0', clientFacing: true },
   { name: 'GTM Strategy',      icon: '🚀', basePay: 2000, office: 'marketing',   phases: ['research','plan','playbook'], time: 12, color: '#c05080', clientFacing: true },
   { name: 'Brand Audit',       icon: '🔍', basePay: 1600, office: 'marketing',   phases: ['assess','benchmark','report'], time: 10, color: '#c05080', clientFacing: true },
   { name: 'ML Pipeline',       icon: '🤖', basePay: 3000, office: 'data',        phases: ['ingest','train','deploy'], time: 16, color: '#4090e0', clientFacing: true },
@@ -803,35 +806,45 @@ export const PROJECT_TEMPLATES = [
 
 // ─── Speech lines ──────────────────────────────────────────
 export const SPEECH_WORKING = {
-  ceo:         ['Reviewing strategy...', 'Checking financials...', 'Making decisions...', 'Planning ahead...', 'On a call...', 'Reading reports...'],
-  seo:         ['Analyzing backlinks...', 'Checking rankings...', 'Optimizing meta tags...', 'Running site audit...'],
-  content:     ['Drafting intro...', 'Researching topic...', 'Editing paragraph...', 'Adding sources...'],
-  video:       ['Setting up shot...', 'Adjusting lighting...', 'Recording take 3...', 'Color grading...'],
-  design:      ['Tweaking colors...', 'Aligning elements...', 'Creating mockup...', 'Vectorizing logo...'],
-  data:        ['Running query...', 'Building chart...', 'Crunching numbers...', 'Joining tables...'],
-  support:     ['Reading ticket...', 'Drafting response...', 'Escalating issue...', 'Closing ticket...'],
-  sales:       ['Reviewing leads...', 'Drafting proposal...', 'Following up...', 'Closing deal...', '💰 Deal signed!', 'Client onboarded!', 'Negotiating terms...'],
-  engineering: ['Writing tests...', 'Debugging code...', 'Deploying build...', 'Code review...', 'Refactoring...', 'Merging PR...'],
-  workshop:    ['Measuring parts...', 'Cutting material...', 'Assembling pieces...', 'Sanding finish...', 'Quality check...'],
-  marketing:   ['Planning campaign...', 'A/B testing ads...', 'Analyzing ROI...', 'Launching promo...', 'Optimizing funnel...'],
-  pr:          ['Pitching story...', 'Writing release...', 'Media outreach...', 'Scheduling interview...', 'Editing quotes...'],
-  hr:          ['Screening resumes...', 'Scheduling interview...', 'Writing job ad...', 'Reviewing applications...', 'Shortlisting candidates...', 'Checking references...', 'Onboarding new hire...'],
-  finance:     ['Reconciling books...', 'Running payroll...', 'Budget forecast...', 'Tax planning...'],
-  legal:       ['Reviewing contract...', 'Filing paperwork...', 'Compliance check...', 'Drafting NDA...'],
-  it:          ['Updating servers...', 'Patching security...', 'Monitoring uptime...', 'Backup running...'],
-  rd:          ['Running experiment...', 'Analyzing data...', 'Testing hypothesis...', 'Writing paper...'],
-  warehouse:   ['Checking inventory...', 'Packing orders...', 'Receiving shipment...', 'Organizing stock...'],
-  shopfront:   ['Helping a customer...', 'Restocking shelves...', 'Arranging display...', 'Processing sale...', 'Folding clothes...'],
+  ceo:         ['Reviewing strategy...', 'Checking financials...', 'Making big decisions...', 'Planning world domination...', 'On a very important call...', 'Reading reports nobody sent...', 'Approving my own expense report', 'Rescheduling the reschedule'],
+  seo:         ['Analyzing backlinks...', 'Checking rankings...', 'Optimizing meta tags...', 'Running site audit...', 'Page 2 of Google? Unacceptable', 'Begging for backlinks...', 'Keywords everywhere...', 'Fighting the algorithm...'],
+  content:     ['Drafting intro...', 'Researching topic...', 'Editing paragraph...', 'Adding sources...', 'Rewriting the rewrite...', 'Staring at blank page...', 'This headline needs more punch', 'Who approved this brief?'],
+  video:       ['Setting up shot...', 'Adjusting lighting...', 'Recording take 14...', 'Color grading...', 'The audio is clipping again', 'Just one more take...', 'Rendering... forever', 'Who moved the tripod?'],
+  design:      ['Tweaking colors...', 'Aligning pixels...', 'Creating mockup v7...', 'Vectorizing logo...', 'Can you make it pop more?', 'Moving it 1px to the left', 'The client wants it "fun"', 'Choosing between 40 fonts...'],
+  data:        ['Running query...', 'Building chart...', 'Crunching numbers...', 'Joining tables...', 'The data doesn\'t lie... usually', 'WHERE did these nulls come from', 'One more pivot table...', 'This spreadsheet has feelings'],
+  support:     ['Reading ticket...', 'Drafting response...', 'Escalating issue...', 'Closing ticket...', 'Have you tried turning it off?', 'That\'s actually a feature', 'Ticket #4,729... and counting', 'Sending thoughts and prayers'],
+  sales:       ['Reviewing leads...', 'Drafting proposal...', 'Following up... again', 'Closing deal...', '💰 Deal signed!', 'Client onboarded!', 'Negotiating terms...', 'Just circling back...', 'Per my last email...', 'Let me loop in my manager'],
+  engineering: ['Writing tests...', 'Debugging code...', 'Deploying build...', 'Code review...', 'Refactoring...', 'Merging PR...', 'It works, don\'t touch it', 'Who wrote this? ...oh, me', 'Stack Overflow to the rescue', '99 bugs in the code, fix one...'],
+  workshop:    ['Measuring twice...', 'Cutting material...', 'Assembling pieces...', 'Sanding finish...', 'Quality check...', 'That\'s not a defect, it\'s character', 'Measure twice, cut once... oops', 'Hand-crafted with love'],
+  marketing:   ['Planning campaign...', 'A/B testing ads...', 'Analyzing ROI...', 'Launching promo...', 'Optimizing funnel...', 'Making it go viral...', 'Synergizing the brand...', 'The metrics look promising!'],
+  pr:          ['Pitching story...', 'Writing press release...', 'Media outreach...', 'Scheduling interview...', 'Spinning this positively...', 'No comment. But also yes comment', 'Getting us in TechCrunch...', 'Managing the narrative...'],
+  hr:          ['Screening resumes...', 'Scheduling interview...', 'Writing job ad...', 'Reviewing applications...', 'Shortlisting candidates...', 'Checking references...', 'Onboarding new hire...', 'This resume is... creative', 'Culture fit assessment...'],
+  finance:     ['Reconciling books...', 'Running payroll...', 'Budget forecast...', 'Tax planning...', 'Where did this $0.01 go?', 'Spreadsheet won\'t balance...', 'Counting beans, literally', 'The auditors are coming...'],
+  legal:       ['Reviewing contract...', 'Filing paperwork...', 'Compliance check...', 'Drafting NDA...', 'Subsection 4, paragraph 12...', 'This clause needs a clause', 'Redlining everything...', 'I am not your lawyer but...'],
+  it:          ['Updating servers...', 'Patching security...', 'Monitoring uptime...', 'Backup running...', 'Did you try restarting?', 'DNS is always the problem', 'Clearing the cache... again', 'Who gave everyone admin access?'],
+  rd:          ['Running experiment...', 'Analyzing results...', 'Testing hypothesis...', 'Writing paper...', 'Results inconclusive... again', 'This needs more funding', 'Eureka! Wait, no. Never mind', 'Back to the whiteboard...'],
+  warehouse:   ['Checking inventory...', 'Packing orders...', 'Receiving shipment...', 'Organizing stock...', 'Where did box #347 go?', 'Tetris champion, warehouse edition', 'Forklift certified and proud'],
+  shopfront:   ['Helping a customer...', 'Restocking shelves...', 'Arranging display...', 'Processing sale...', 'Folding clothes...', 'That looks great on you!', 'Let me check the back...', 'Just got a new shipment!'],
 };
-export const SPEECH_THINKING = ['Hmm...', 'Let me think...', 'Processing...', 'Analyzing...', 'One moment...', '🤔'];
-export const SPEECH_IDLE = ['☕ Coffee time!', 'Ready to go!', 'What\'s next?', '💤 Quiet day...', 'Stretching...'];
-export const SPEECH_DONE = ['✅ Done!', 'Shipped it!', 'Task complete!', '🎉 Finished!'];
-export const SPEECH_BREAK = ['Ahh, needed this!', 'Good coffee ☕', 'Recharging...', 'Back in 5!'];
-export const SPEECH_EXHAUSTED = ['So tired...', 'Need a break...', 'Running on empty...', 'Can barely focus...', 'Must rest...'];
-export const SPEECH_COLLAB = ['Great meeting!', 'Good sync!', 'Love this team!', 'Learned something!'];
-export const SPEECH_RAISE = ['I need a raise...', 'I\'m underpaid for my skills', 'Can we talk compensation?', 'I deserve better pay'];
-export const SPEECH_QUIT = ['I quit! Not valued here.', 'Time to move on.', 'Found a better offer.', 'Good luck without me!'];
-export const SPEECH_SKILL_CAP = ['I\'ve peaked...', 'Need new challenges', 'Hit my ceiling here', 'Not growing anymore'];
+// Per-company-type speech overrides — merged on top of office defaults
+export const SPEECH_WORKING_OVERRIDES = {
+  tech_lab: {
+    data:        ['Training neural net...', 'Tuning hyperparameters...', 'GPU go brrr...', 'Loss is decreasing!', 'Evaluating benchmark...', 'Cleaning dataset... again', 'Eliminating hallucinations...', 'Fine-tuning on vibes...', 'Is this sentient? No. Moving on', 'Adding more RLHF...', 'It passed the eval! Ship it'],
+    engineering: ['Shipping v0.1...', 'Writing CUDA kernel...', 'Optimizing inference...', 'Reviewing PR... 900 files changed', 'It works on my cluster', 'Deploying to prod 🙏', 'Rewriting in Rust...', 'The model is 400GB, that\'s fine', 'Adding more safety filters...', 'Scaling to 128 GPUs...'],
+    rd:          ['Publishing paper...', 'New architecture idea!', 'Needs more compute...', 'Ablation study #47...', 'Beat the benchmark! Maybe', 'Peer review is brutal', 'We need a bigger cluster', 'Releasing new LLM 🚀', 'It\'s just attention layers', 'Emergent behavior detected 👀', 'Wrote a paper, got scooped'],
+  },
+};
+
+export const SPEECH_THINKING = ['Hmm...', 'Let me think...', 'Processing...', 'Analyzing...', 'One moment...', '🤔', 'This is interesting...', 'Bear with me...'];
+export const SPEECH_IDLE = ['☕ Coffee time!', 'Ready to go!', 'What\'s next?', '💤 Quiet day...', 'Stretching...', 'Checking Slack... nothing', 'Anyone need help?', 'Reorganizing my desk'];
+export const SPEECH_DONE = ['✅ Done!', 'Shipped it!', 'Task complete!', '🎉 Finished!', 'Nailed it!', 'And that\'s a wrap!'];
+export const SPEECH_BREAK = ['Ahh, needed this!', 'Good coffee ☕', 'Recharging...', 'Back in 5!', 'Snack break!', 'Touch grass moment'];
+export const SPEECH_EXHAUSTED = ['So tired...', 'Need a break...', 'Running on empty...', 'Can barely focus...', 'Must rest...', 'My brain is mush...', 'Error 503: human unavailable'];
+export const SPEECH_COLLAB = ['Great meeting!', 'Good sync!', 'Love this team!', 'Learned something!', 'We should do this more often', 'That was actually useful!'];
+export const SPEECH_RAISE = ['I need a raise...', 'LinkedIn is looking good right now', 'Can we talk compensation?', 'I know what the market pays...', 'Glassdoor says I\'m underpaid'];
+export const SPEECH_QUIT = ['I quit! Not valued here.', 'Time to move on.', 'Found a better offer.', 'Good luck without me!', 'My two weeks starts now'];
+export const SPEECH_SKILL_CAP = ['I\'ve peaked...', 'Need new challenges', 'Hit my ceiling here', 'Not growing anymore', 'Feeling stagnant...'];
+export const SPEECH_PROMOTED = ['Level up!', 'I got promoted!', 'Moving on up!', 'Hard work pays off!', 'New title, who dis?', 'Mom, I made it!'];
 
 // ─── Visitor Dialogue System ────────────────────────────
 export const VISITOR_ARRIVAL_SPEECH = {
@@ -1021,7 +1034,7 @@ export const ANALYTICS_LEVELS = {
 export const TUTORIAL_HINTS = [
   { trigger: 'start',      text: 'Welcome! Click the Build button to start placing rooms.' },
   { trigger: 'first_room', text: 'Great! Now hire an agent to work in your new office.' },
-  { trigger: 'first_hire', text: 'Your agent needs projects! Build a Marketing HQ for paid traffic or Sales Office to close deals.' },
+  { trigger: 'first_hire', text: null }, // dynamic — set at runtime per company type
   { trigger: 'first_project', text: 'Projects are coming in! Watch your agents work and manage your cash flow.' },
   { trigger: 'low_mood',   text: 'Your agents look tired. Build a Break Room to let them recharge!' },
   { trigger: 'low_energy', text: 'An agent is running low on energy! They\'ll be forced to rest soon. Build a Break Room for faster recovery.' },
@@ -1331,9 +1344,9 @@ export const COMPANY_TYPES = {
     bonuses: { reputationGainMultiplier: 1.5 },
   },
   tech_lab: {
-    name: 'Tech Lab',
-    icon: '🧪',
-    tagline: 'Cutting-edge R&D and innovation',
+    name: 'AI Lab',
+    icon: '🤖',
+    tagline: 'Build models, ship products, scale fast',
     available: ['engineering','data','design','sales','support','it','rd','marketing','hr','finance','legal'],
     startUnlocked: ['lobby','engineering','data'],
     bonuses: { rdInnovationRate: 1.5, projectPayMultiplier: 1.2 },
@@ -1352,7 +1365,7 @@ export const COMPANY_TYPES = {
     tagline: 'Expert advice, data-driven strategy',
     available: ['data','engineering','content','sales','pr','marketing','support','hr','finance','legal','it'],
     startUnlocked: ['lobby','data','content','support'],
-    bonuses: { reputationPayMultiplier: 2.0 },
+    bonuses: { reputationPayMultiplier: 2.0, projectPayMultiplier: 1.1 },
   },
   staffing_agency: {
     name: 'Staffing Agency',
@@ -1360,7 +1373,7 @@ export const COMPANY_TYPES = {
     tagline: 'Find the right people for every role',
     available: ['hr','support','sales','marketing','pr','finance','legal','it','data','content'],
     startUnlocked: ['lobby','hr','support','sales'],
-    bonuses: { hireCostDiscount: 0.5, founderDemandMultiplier: 2.5, projectPayMultiplier: 1.2 },
+    bonuses: { hireCostDiscount: 0.5, founderDemandMultiplier: 2.5, placementFeeMultiplier: 1.3 },
   },
   fashion_retail: {
     name: 'Fashion Store',

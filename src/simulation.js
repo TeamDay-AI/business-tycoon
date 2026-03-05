@@ -141,6 +141,12 @@ function updateProjects(dt) {
             const companyPayMult = companyDef2.bonuses?.projectPayMultiplier || 1.0;
             if (companyPayMult !== 1.0) finalPay = Math.round(finalPay * companyPayMult);
 
+            // Placement fee multiplier (staffing agency: HR/support projects pay more)
+            const placementMult = companyDef2.bonuses?.placementFeeMultiplier || 0;
+            if (placementMult > 0 && (p.targetOffice === 'hr' || p.targetOffice === 'support')) {
+              finalPay = Math.round(finalPay * placementMult);
+            }
+
             // Consulting/reputation premium: steep non-linear curve
             if (companyDef2.bonuses?.reputationPayMultiplier) {
               const premium = getConsultingPremium();
@@ -178,11 +184,12 @@ function updateProjects(dt) {
           G.metrics.officeRevenue[p.targetOffice] = (G.metrics.officeRevenue[p.targetOffice] || 0) + finalPay;
           const repDeltaBase = p.getReputationChange() + supportRepBonus;
           const prRepMult = getPRReputationBonus();
-          const companyRepMult = companyDef.bonuses?.reputationGainMultiplier || 1.0;
+          const companyDefRep = COMPANY_TYPES[G.companyType] || {};
+          const companyRepMult = companyDefRep.bonuses?.reputationGainMultiplier || 1.0;
           const repDelta = repDeltaBase > 0 ? Math.round(repDeltaBase * prRepMult * companyRepMult) : repDeltaBase;
           G.reputation = Math.round(Math.min(100, Math.max(0, G.reputation + repDelta)));
 
-          // Product level gain (SaaS/Tech Lab) from engineering/R&D projects
+          // Product level gain (SaaS/AI Lab) from engineering/R&D projects
           if (hasProductGrowth() && (p.targetOffice === 'engineering' || p.targetOffice === 'rd')) {
             const levelGain = calculateProductLevelGain(p.qualityScore);
             G.productLevel = Math.min(100, G.productLevel + levelGain);
@@ -300,7 +307,7 @@ function processDayCycle(dt) {
     G.money -= costs;
     G.metrics.dailyCosts = costs;
 
-    // MRR income (SaaS/Tech Lab) — passive revenue from product level
+    // MRR income (SaaS/AI Lab) — passive revenue from product level
     if (hasProductGrowth() && G.productLevel > 0) {
       const dailyMRR = calculateMRR();
       G.mrr = dailyMRR;
@@ -532,13 +539,13 @@ function processWeek() {
     }
   }
 
-  // Tech debt: product level decays if no engineering projects completed this week (SaaS/Tech Lab)
+  // Tech debt: product level decays if no engineering projects completed this week (SaaS/AI Lab)
   if (hasProductGrowth() && G.productLevel > 0 && G.engineeringProjectsThisWeek === 0) {
     G.productLevel = Math.max(0, G.productLevel - 0.5);
   }
   G.engineeringProjectsThisWeek = 0;
 
-  // R&D breakthrough cycle — rdInnovationRate speeds it up (Tech Lab: every 2 weeks vs 3)
+  // R&D breakthrough cycle — rdInnovationRate speeds it up (AI Lab: every 2 weeks vs 3)
   if (countRoomsByType('rd') > 0) {
     G.rdBreakthroughTimer++;
     const companyDef = COMPANY_TYPES[G.companyType] || {};
@@ -797,8 +804,18 @@ const HINT_BY_TRIGGER = Object.fromEntries(
   TUTORIAL_HINTS.map(h => [h.trigger, h.text])
 );
 
+const FIRST_HIRE_HINTS = {
+  fashion_retail:  'Your agent needs projects! Build a Shopfront to attract walk-in customers.',
+  ecommerce:       'Your agent needs projects! Build a Sales Office and Warehouse to start selling.',
+  maker_co:        'Your agent needs projects! Build a Workshop to start making products.',
+  tech_lab:        'Your agent needs projects! Build an Engineering Lab to start building tech.',
+  staffing_agency: 'Your agent needs projects! Build an HR Office to start placing candidates.',
+};
+const FIRST_HIRE_DEFAULT = 'Your agent needs projects! Build a Marketing HQ for paid traffic or Sales Office to close deals.';
+
 function showTutorialHint(trigger) {
-  const text = HINT_BY_TRIGGER[trigger];
+  let text = HINT_BY_TRIGGER[trigger];
+  if (trigger === 'first_hire') text = FIRST_HIRE_HINTS[G.companyType] || FIRST_HIRE_DEFAULT;
   if (!text || G.shownHints.has(trigger)) return false;
   G.shownHints.add(trigger);
   G.lastHintTick = G.gameTick;
