@@ -1,4 +1,4 @@
-# Deploy static site to GitHub Pages on every push to main
+# Sync main → gh-pages on every push (GitHub Pages deploys from gh-pages via legacy builder)
 name: Deploy to GitHub Pages
 
 on:
@@ -7,25 +7,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  contents: write
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          fetch-depth: 0
+      - name: Push to gh-pages
+        run: git push origin HEAD:gh-pages --force
