@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog — Business Tycoon</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0e0b10;
+      color: #e8ddd0;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #a08870;
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 32px;
+      transition: color 0.15s;
+    }
+    .back:hover { color: #e8ddd0; }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #f0a050, #e06030);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tagline {
+      color: #a08870;
+      font-size: 13px;
+      margin-bottom: 40px;
+    }
+    .version {
+      margin-bottom: 36px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .version:last-child { border-bottom: none; }
+    .version-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .version-tag {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f0a050;
+    }
+    .version-date {
+      font-size: 12px;
+      color: #665848;
+    }
+    .version-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8ddd0;
+      margin-bottom: 8px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      position: relative;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #c0b0a0;
+      margin-bottom: 5px;
+    }
+    li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #e07030;
+      opacity: 0.6;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    .tag-new { background: rgba(80,200,120,0.15); color: #50c878; }
+    .tag-fix { background: rgba(100,160,255,0.15); color: #64a0ff; }
+    .tag-change { background: rgba(240,160,80,0.15); color: #f0a050; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">&larr; Back to game</a>
+    <h1>Changelog</h1>
+    <p class="tagline">What's new in Business Tycoon</p>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.7</span>
+        <span class="version-date">March 5, 2026</span>
+      </div>
+      <div class="version-title">Onboarding &amp; Analytics</div>
+      <ul>
+        <li><span class="tag tag-change">Change</span> Welcome screen now shows before company selector for better onboarding flow</li>
+        <li><span class="tag tag-new">New</span> Umami analytics integration for player insights</li>
+        <li><span class="tag tag-new">New</span> Google Analytics tracking</li>
+      </ul>
+    </div>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.6</span>
+        <span class="version-date">March 2026</span>
+      </div>
+      <div class="version-title">Meetings &amp; Agent Behavior</div>
+      <ul>
+        <li><span class="tag tag-fix">Fix</span> Agents now walk naturally to meeting rooms instead of teleporting</li>
+        <li><span class="tag tag-change">Change</span> Meeting frequency reduced to ~4% of work time (was 16%)</li>
+        <li><span class="tag tag-new">New</span> Agents distributed across multiple meeting rooms by proximity</li>
+        <li><span class="tag tag-change">Change</span> Major overhaul of agent movement, promotions, and speech bubbles</li>
+      </ul>
+    </div>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.5</span>
+        <span class="version-date">March 2026</span>
+      </div>
+      <div class="version-title">PWA &amp; Reliability</div>
+      <ul>
+        <li><span class="tag tag-new">New</span> Auto-reload when service worker updates — no more stale cache</li>
+        <li><span class="tag tag-fix">Fix</span> Cache busting with semver-style versioning</li>
+        <li><span class="tag tag-change">Change</span> Switched to legacy GitHub Pages builder for more reliable deploys</li>
+      </ul>
+    </div>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.4</span>
+        <span class="version-date">February 2026</span>
+      </div>
+      <div class="version-title">Community &amp; PWA</div>
+      <ul>
+        <li><span class="tag tag-new">New</span> PWA support — install as an app on mobile and desktop</li>
+        <li><span class="tag tag-new">New</span> Open-source README with screenshots</li>
+        <li><span class="tag tag-new">New</span> Discord community and GitHub links in welcome screen</li>
+        <li><span class="tag tag-fix">Fix</span> Door alignment and visitor dialogue improvements</li>
+      </ul>
+    </div>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.3</span>
+        <span class="version-date">February 2026</span>
+      </div>
+      <div class="version-title">Custom Domain</div>
+      <ul>
+        <li><span class="tag tag-new">New</span> Custom domain: tycoon.teamday.ai</li>
+      </ul>
+    </div>
+
+    <div class="version">
+      <div class="version-header">
+        <span class="version-tag">v0.1</span>
+        <span class="version-date">February 2026</span>
+      </div>
+      <div class="version-title">Initial Release</div>
+      <ul>
+        <li><span class="tag tag-new">New</span> Isometric AI office simulator with full economy engine</li>
+        <li><span class="tag tag-new">New</span> 6 company types with unique office layouts and strategies</li>
+        <li><span class="tag tag-new">New</span> Agent AI — workers with skills, mood, pathfinding, and meetings</li>
+        <li><span class="tag tag-new">New</span> Build mode — place offices, corridors, furniture</li>
+        <li><span class="tag tag-new">New</span> Revenue pipeline — visitors, leads, clients, MRR</li>
+        <li><span class="tag tag-new">New</span> Random events — market booms, VC offers, disasters</li>
+        <li><span class="tag tag-new">New</span> AI CEO mode — let AI manage your company</li>
+        <li><span class="tag tag-new">New</span> Procedural sound effects and background music</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>
