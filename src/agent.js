@@ -16,6 +16,19 @@ import { getWalkable, getRoomInstances } from './map.js';
 import { G } from './game.js';
 import { getTechEfficiencyBonus } from './events.js';
 
+/** Build a Set of "x,y" keys for tiles occupied by other agents (rounded positions). */
+function getOccupiedTiles(excludeAgent) {
+  const occupied = new Set();
+  for (const a of G.agents) {
+    if (a === excludeAgent) continue;
+    occupied.add(`${Math.round(a.x)},${Math.round(a.y)}`);
+  }
+  if (G.ceo && G.ceo !== excludeAgent) {
+    occupied.add(`${Math.round(G.ceo.x)},${Math.round(G.ceo.y)}`);
+  }
+  return occupied;
+}
+
 let nextCharId = 0;
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -154,23 +167,41 @@ export class Agent {
     const room = rooms[roomId];
     if (!room) return false;
     const walkable = getWalkable();
+    const occupied = getOccupiedTiles(this);
 
+    // Prefer unoccupied work positions first, then fall back to occupied ones
+    let fallbackPos = null;
     for (const pos of room.workPositions) {
-      if (walkable[pos.y]?.[pos.x] && this.moveTo(pos.x, pos.y)) return true;
+      if (!walkable[pos.y]?.[pos.x]) continue;
+      if (!occupied.has(`${pos.x},${pos.y}`)) {
+        if (this.moveTo(pos.x, pos.y)) return true;
+      } else if (!fallbackPos) {
+        fallbackPos = pos;
+      }
     }
-    // Fallback: try tiles near center
+
+    // Fallback: try tiles near center, preferring unoccupied
     const cx = room.x + Math.floor(room.w / 2);
     const cy = room.y + Math.floor(room.h / 2);
+    let fallbackCenter = null;
     for (let r = 0; r <= 3; r++) {
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           const tx = cx + dx, ty = cy + dy;
           if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H && walkable[ty][tx]) {
-            if (this.moveTo(tx, ty)) return true;
+            if (!occupied.has(`${tx},${ty}`)) {
+              if (this.moveTo(tx, ty)) return true;
+            } else if (!fallbackCenter) {
+              fallbackCenter = { x: tx, y: ty };
+            }
           }
         }
       }
     }
+
+    // All tiles occupied — use first available fallback so agent still moves
+    if (fallbackPos && this.moveTo(fallbackPos.x, fallbackPos.y)) return true;
+    if (fallbackCenter && this.moveTo(fallbackCenter.x, fallbackCenter.y)) return true;
     return false;
   }
 
@@ -266,6 +297,19 @@ export class Agent {
         } else {
           this.bobY = 0;
           if (this.task) {
+            // Arrived at work — nudge to adjacent tile if someone is already here
+            const occupied = getOccupiedTiles(this);
+            if (occupied.has(`${Math.round(this.x)},${Math.round(this.y)}`)) {
+              const walkable = getWalkable();
+              const nudgeDirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+              for (const {dx,dy} of nudgeDirs) {
+                const nx = Math.round(this.x) + dx, ny = Math.round(this.y) + dy;
+                if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && walkable[ny]?.[nx] && !occupied.has(`${nx},${ny}`)) {
+                  this.x = nx; this.y = ny;
+                  break;
+                }
+              }
+            }
             if (Math.random() < 0.3) { this.startThinking(); }
             else { this.state = 'working'; this.workTimer = 0; }
           } else if (this.state === 'walking' && this.breakTimer > 0) {
@@ -350,6 +394,26 @@ export class Agent {
         }
         this.idleTimer += dt;
         this.bobY = 0;
+
+        // Nudge away if sharing a tile with another agent
+        if (this.idleTimer > 10) {
+          const myTile = `${Math.round(this.x)},${Math.round(this.y)}`;
+          const occupied = getOccupiedTiles(this);
+          if (occupied.has(myTile)) {
+            const walkable = getWalkable();
+            // Try adjacent tiles to spread out
+            const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1},{dx:1,dy:1},{dx:-1,dy:-1},{dx:1,dy:-1},{dx:-1,dy:1}];
+            for (const {dx,dy} of dirs) {
+              const nx = Math.round(this.x) + dx, ny = Math.round(this.y) + dy;
+              if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && walkable[ny]?.[nx] && !occupied.has(`${nx},${ny}`)) {
+                this.moveTo(nx, ny);
+                this.idleTimer = 0;
+                break;
+              }
+            }
+          }
+        }
+
         if (this.idleTimer > 180 + Math.random() * 250) {
           this.idleTimer = 0;
           // Need a break? Check both mood AND energy
@@ -362,12 +426,17 @@ export class Agent {
             if (br) this.moveToRoom(br.id);
             if (Math.random() < 0.5) this.say(pick(SPEECH_IDLE));
           } else {
-            // Wander near current pos
-            const rx = Math.round(this.x) + Math.floor(Math.random() * 7) - 3;
-            const ry = Math.round(this.y) + Math.floor(Math.random() * 7) - 3;
+            // Wander near current pos, avoid occupied tiles
             const walkable = getWalkable();
-            if (rx >= 0 && rx < MAP_W && ry >= 0 && ry < MAP_H && walkable[ry]?.[rx]) {
-              this.moveTo(rx, ry);
+            const occupied = getOccupiedTiles(this);
+            let attempts = 5;
+            while (attempts-- > 0) {
+              const rx = Math.round(this.x) + Math.floor(Math.random() * 7) - 3;
+              const ry = Math.round(this.y) + Math.floor(Math.random() * 7) - 3;
+              if (rx >= 0 && rx < MAP_W && ry >= 0 && ry < MAP_H && walkable[ry]?.[rx] && !occupied.has(`${rx},${ry}`)) {
+                this.moveTo(rx, ry);
+                break;
+              }
             }
           }
         }

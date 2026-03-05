@@ -231,6 +231,11 @@ export function countRoomsByType(typeKey) {
   return roomInstances.filter(r => r.typeKey === typeKey && isRoomReady(r)).length;
 }
 
+// Returns all ready rooms of a type
+export function findAllRoomsByType(typeKey) {
+  return roomInstances.filter(r => r.typeKey === typeKey && isRoomReady(r));
+}
+
 // Returns array of rooms that just completed construction this tick
 export function updateConstruction(dt) {
   const completed = [];

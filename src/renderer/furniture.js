@@ -318,6 +318,59 @@ export function drawFurniture(f) {
       ctx.fillStyle = '#888';
       ctx.beginPath(); ctx.arc(cx, cy-35*z, 4*z, 0, Math.PI*2); ctx.fill();
       break;
+
+    case 'mannequin': {
+      // Base stand
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 8*z, 4*z, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Pole
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 2*z;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy-18*z); ctx.stroke();
+      // Torso form
+      ctx.fillStyle = '#d4b896';
+      ctx.beginPath();
+      ctx.moveTo(cx-8*z, cy-18*z);
+      ctx.lineTo(cx-10*z, cy-30*z);
+      ctx.lineTo(cx-6*z, cy-38*z);
+      ctx.lineTo(cx+6*z, cy-38*z);
+      ctx.lineTo(cx+10*z, cy-30*z);
+      ctx.lineTo(cx+8*z, cy-18*z);
+      ctx.closePath(); ctx.fill();
+      // Head
+      ctx.fillStyle = '#d4b896';
+      ctx.beginPath(); ctx.ellipse(cx, cy-41*z, 4*z, 5*z, 0, 0, Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'clothingrack': {
+      // Two uprights
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 2*z;
+      ctx.beginPath(); ctx.moveTo(cx-14*z, cy+2*z); ctx.lineTo(cx-14*z, cy-28*z); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+14*z, cy+2*z); ctx.lineTo(cx+14*z, cy-28*z); ctx.stroke();
+      // Horizontal bar
+      ctx.strokeStyle = '#888'; ctx.lineWidth = 3*z;
+      ctx.beginPath(); ctx.moveTo(cx-14*z, cy-28*z); ctx.lineTo(cx+14*z, cy-28*z); ctx.stroke();
+      // Hanging clothes
+      const colors = ['#e068a0','#6090d0','#50b868','#e0a030','#9068d0'];
+      for (let i = 0; i < 5; i++) {
+        ctx.fillStyle = colors[i];
+        const hx = cx - 12*z + i * 6*z;
+        ctx.fillRect(hx, cy-27*z, 5*z, 14*z);
+      }
+      break;
+    }
+
+    case 'register': {
+      // Counter base
+      drawBox(cx, cy, 40*z, 20*z, 16*z, '#8B7355', '#6B5335', '#7B6345');
+      // Register box
+      drawBox(cx-2*z, cy-16*z, 24*z, 14*z, 10*z, '#444', '#333', '#3a3a3a');
+      // Screen
+      ctx.fillStyle = '#4a9'; ctx.fillRect(cx-8*z, cy-26*z, 12*z, 6*z);
+      break;
+    }
   }
 
   // Restore alpha if construction fade was applied

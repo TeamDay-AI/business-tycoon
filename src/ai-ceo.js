@@ -53,6 +53,7 @@ const BUILD_PRIORITIES = {
   maker_co:        ['workshop', 'warehouse', 'breakroom', 'hr', 'engineering', 'design', 'sales', 'support', 'rd', 'meeting', 'finance', 'legal', 'it'],
   consulting_firm: ['data', 'content', 'breakroom', 'support', 'hr', 'engineering', 'sales', 'pr', 'marketing', 'meeting', 'finance', 'legal', 'it'],
   staffing_agency: ['hr', 'support', 'sales', 'breakroom', 'content', 'marketing', 'pr', 'data', 'meeting', 'finance', 'legal', 'it'],
+  fashion_retail:  ['shopfront', 'warehouse', 'design', 'breakroom', 'hr', 'sales', 'marketing', 'support', 'pr', 'content', 'meeting', 'finance', 'legal', 'it'],
 };
 
 // Maps office types to the agent role key needed
@@ -174,6 +175,23 @@ function handleEquipment() {
     G.equipmentConfig.sales_pricing = 'premium';
     showToast('🤖 AI CEO switched to premium pricing!');
     changed = true;
+  }
+
+  // Fashion store: start with discount pricing for volume, switch to standard once reputation is high
+  if (countRoomsByType('shopfront') > 0 && G.equipmentConfig.pricing_strategy !== undefined) {
+    if (G.equipmentConfig.pricing_strategy === 'standard' && G.reputation < 50) {
+      G.equipmentConfig.pricing_strategy = 'discount';
+      showToast('🤖 AI CEO set discount pricing for more foot traffic!');
+      changed = true;
+    } else if (G.equipmentConfig.pricing_strategy === 'discount' && G.reputation > 65) {
+      G.equipmentConfig.pricing_strategy = 'standard';
+      showToast('🤖 AI CEO switched to standard pricing — reputation is strong!');
+      changed = true;
+    } else if (G.equipmentConfig.pricing_strategy === 'standard' && G.reputation > 80 && G.totalRevenue > 30000) {
+      G.equipmentConfig.pricing_strategy = 'premium';
+      showToast('🤖 AI CEO switched to premium pricing — fashion brand established!');
+      changed = true;
+    }
   }
 
   if (G.equipmentConfig.seo_focus === 'content' && G.totalRevenue > 20000) {
@@ -396,8 +414,15 @@ function handleBuilding() {
     return false;
   }
 
+  // Fashion retail: build extra shopfronts in mid-game (revenue rooms scale walk-in income)
+  const isFashion = companyType === 'fashion_retail';
+  const shopfrontCount = isFashion ? countRoomsByType('shopfront') : 0;
+  const wantsMoreShopfronts = isFashion && shopfrontCount < 3 && shopfrontCount >= 1 && G.totalRevenue > 8000;
+
   for (const roomKey of buildOrder) {
-    if (countRoomsByType(roomKey) > 0) continue;
+    const existing = countRoomsByType(roomKey);
+    // Allow duplicates only for fashion shopfronts mid-game
+    if (existing > 0 && !(roomKey === 'shopfront' && wantsMoreShopfronts)) continue;
     if (!isOfficeAvailable(roomKey)) continue;
 
     const unlock = getRoomUnlockState(roomKey);
@@ -647,8 +672,13 @@ function handleHiring() {
 
     const staffCount = G.agents.filter(a => a.role.office === roomKey).length;
     const needsStaff = staffCount === 0;
-    const needsSecond = staffCount === 1 && totalAgents >= 5 && G.totalRevenue > 15000;
-    if (!needsStaff && !needsSecond) continue;
+    // Fashion shopfronts: hire up to 3 shop assistants aggressively (walk-in revenue scales with min(assistants, 3))
+    const isFashionShop = roomKey === 'shopfront' && G.companyType === 'fashion_retail';
+    const maxShopStaff = isFashionShop ? Math.min(3, countRoomsByType('shopfront') * 2) : 2;
+    const needsMore = isFashionShop
+      ? staffCount < maxShopStaff && G.totalRevenue > 3000 * staffCount
+      : staffCount === 1 && totalAgents >= 5 && G.totalRevenue > 15000;
+    if (!needsStaff && !needsMore) continue;
 
     let candidates = getCandidatesForRole(roleKey);
     if (candidates.length === 0) {

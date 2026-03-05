@@ -129,6 +129,22 @@ const TECH_TREES = {
     legal:       { tier: 6, requirement: 'Reach $60,000 revenue', check: () => G.totalRevenue >= 60000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/60K` },
     it:          { tier: 6, requirement: 'Reach $80,000 revenue', check: () => G.totalRevenue >= 80000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/80K` },
   },
+  fashion_retail: {
+    lobby:     { tier: 0, requirement: 'Start room', check: () => true, progress: () => 'Available' },
+    shopfront: { tier: 1, requirement: 'Core office', check: () => true, progress: () => 'Available' },
+    warehouse: { tier: 1, requirement: 'Core office', check: () => true, progress: () => 'Available' },
+    hr:        { tier: 2, requirement: 'Reach $3,000 revenue', check: () => G.totalRevenue >= 3000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/3K` },
+    design:    { tier: 2, requirement: 'Reach $5,000 revenue', check: () => G.totalRevenue >= 5000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/5K` },
+    support:   { tier: 2, requirement: 'Reach $6,000 revenue', check: () => G.totalRevenue >= 6000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/6K` },
+    sales:     { tier: 3, requirement: 'Reach $10,000 revenue', check: () => G.totalRevenue >= 10000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/10K` },
+    marketing: { tier: 3, requirement: 'Reach $12,000 revenue', check: () => G.totalRevenue >= 12000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/12K` },
+    pr:        { tier: 4, requirement: 'Reach $20,000 revenue', check: () => G.totalRevenue >= 20000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/20K` },
+    content:   { tier: 4, requirement: 'Reach $25,000 revenue', check: () => G.totalRevenue >= 25000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/25K` },
+    meeting:   { tier: 5, requirement: '4 agents', check: () => G.agents.length >= 4, progress: () => `${G.agents.length}/4 agents` },
+    finance:   { tier: 6, requirement: 'Reach $50,000 revenue', check: () => G.totalRevenue >= 50000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/50K` },
+    legal:     { tier: 6, requirement: 'Reach $60,000 revenue', check: () => G.totalRevenue >= 60000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/60K` },
+    it:        { tier: 6, requirement: 'Reach $80,000 revenue', check: () => G.totalRevenue >= 80000, progress: () => `${Math.round(G.totalRevenue).toLocaleString()}/80K` },
+  },
 };
 
 // ─── Branch nodes (tier 4 choices) ──────────────────────

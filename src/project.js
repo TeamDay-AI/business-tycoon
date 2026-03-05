@@ -15,7 +15,7 @@ export class Project {
     this.phaseTime = template.time / template.phases.length;
     this.state = 'waiting'; // waiting, in_progress, done
     this.assignedAgents = [];
-    this.pay = Math.round(template.basePay * reputationPremium);
+    this.pay = template.cost ? template.basePay : Math.round(template.basePay * reputationPremium);
     this.stalled = false;
     this.qualityScore = 0;
     this.deadline = template.time * 1.3; // tight deadline — miss it and get nothing

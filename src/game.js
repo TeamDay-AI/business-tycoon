@@ -103,6 +103,13 @@ export const G = {
   teamAlignment: 0,           // average alignment across all agents (computed)
   teamBuildingActive: false,   // true when CEO is running a team building
   teamBuildingTimer: 0,        // ticks remaining for team building
+  teamBuildingPhase: null,     // 'gather' | 'circle' | 'cheer' | null
+
+  // Standup meeting (weekly)
+  standupActive: false,        // true when standup is in progress
+  standupPhase: null,          // 'gather' | 'huddle' | 'cheer' | null
+  standupTimer: 0,             // ticks remaining in current phase
+  standupCenter: null,         // { x, y } center of meeting room for circle
 
   // Win/loss
   gameOver: false,

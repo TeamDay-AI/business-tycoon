@@ -217,12 +217,17 @@ function drawStateIndicator(ctx, agent, cx, cy, z) {
     ctx.beginPath(); ctx.arc(cx, cy - 34*z, 3*z, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.font = `bold ${7*z}px system-ui`; ctx.textAlign = 'center';
     ctx.fillText('☕', cx, cy - 31*z);
+  } else if (agent.inMeeting) {
+    ctx.fillStyle = 'rgba(100,140,220,0.6)';
+    ctx.beginPath(); ctx.arc(cx, cy - 34*z, 3*z, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${7*z}px system-ui`; ctx.textAlign = 'center';
+    ctx.fillText('🤝', cx, cy - 31*z);
   }
 }
 
 // ─── Visitor Drawing ────────────────────────────────────────
-const VISITOR_COLORS = { client: '#8090a0', candidate: '#90a080', walkin: '#a09080' };
-const VISITOR_ICONS = { client: '💼', candidate: '📋', walkin: '👀' };
+const VISITOR_COLORS = { client: '#8090a0', candidate: '#90a080', walkin: '#a09080', customer: '#c080a0' };
+const VISITOR_ICONS = { client: '💼', candidate: '📋', walkin: '👀', customer: '🛍️' };
 
 export function drawVisitor(v) {
   const ctx = getCtx();
@@ -269,6 +274,18 @@ export function drawVisitor(v) {
   ctx.fillStyle = v.skinTone;
   ctx.fillRect(cx - 9*z, cy - 7*z + seatOffset + armAnim, 3*z, 3*z);
   ctx.fillRect(cx + 6*z, cy - 7*z + seatOffset - armAnim, 3*z, 3*z);
+
+  // Shopping bag (converted customers leaving)
+  if (v.converted && v.state === 'leaving') {
+    const bx = cx + 6*z, by = cy - 6*z - armAnim;
+    ctx.fillStyle = '#e068a0';
+    ctx.fillRect(bx - 1*z, by, 5*z, 7*z);
+    ctx.strokeStyle = '#c05080'; ctx.lineWidth = 0.5*z;
+    ctx.strokeRect(bx - 1*z, by, 5*z, 7*z);
+    // Handle
+    ctx.strokeStyle = '#c05080'; ctx.lineWidth = 0.7*z;
+    ctx.beginPath(); ctx.arc(bx + 1.5*z, by, 1.5*z, Math.PI, 0); ctx.stroke();
+  }
 
   // Head
   ctx.fillStyle = v.skinTone;

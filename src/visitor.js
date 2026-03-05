@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { findPath } from './pathfinding.js';
-import { getWalkable, getRoomInstances, findRoomByType } from './map.js';
+import { getWalkable, getRoomInstances, findRoomByType, findAllRoomsByType } from './map.js';
 import {
   MAP_W, MAP_H,
   VISITOR_ARRIVAL_SPEECH, VISITOR_QUEUE_SPEECH, VISITOR_DIALOGUES,
@@ -48,7 +48,7 @@ export function isRoomOccupiedByVisitor(room, visitors) {
 export class Visitor {
   constructor(type, targetRoomType) {
     this.id = nextVisitorId++;
-    this.type = type; // 'client' | 'candidate' | 'walkin'
+    this.type = type; // 'client' | 'candidate' | 'walkin' | 'customer'
     this.targetRoomType = targetRoomType; // e.g. 'sales', 'hr', null for walk-in
 
     // Position & movement
@@ -80,7 +80,7 @@ export class Visitor {
 
     // Agent dispatch
     this.needsAgent = false;
-    this.requestedRole = null; // 'sales' | 'hr' | null
+    this.requestedRole = null; // 'sales' | 'hr' | 'shopfront' | null
 
     // Dialogue system
     this.conversationStep = 0;
@@ -229,6 +229,7 @@ export class Visitor {
 
   leave(happy) {
     this.state = 'leaving';
+    this.converted = happy && (this.type === 'customer' || this.type === 'client');
     // Release chair
     if (this.claimedChair) {
       releaseChair(this.claimedChair);
@@ -242,7 +243,10 @@ export class Visitor {
     }
     this.assignedAgent = null;
     if (happy) {
-      this.say(pick(['Thanks! 😊', 'Great! 👍', 'Nice office!', 'Impressed! ⭐']), 120);
+      const happySpeech = this.type === 'customer'
+        ? pick(['Great find! 🛍️', 'Love it! 👗', 'I\'ll be back!', 'Amazing style! ⭐'])
+        : pick(['Thanks! 😊', 'Great! 👍', 'Nice office!', 'Impressed! ⭐']);
+      this.say(happySpeech, 120);
     } else {
       this.say(pick(['Too slow! 😤', 'Leaving... 😒', 'Not worth it.', 'Bye. 👎']), 120);
     }
@@ -250,6 +254,7 @@ export class Visitor {
   }
 
   update(dt, visitors) {
+    Visitor._allVisitors = visitors || [];
     this.frame += dt;
 
     // Speech countdown
@@ -272,7 +277,7 @@ export class Visitor {
         this._tickMovement(dt);
         if (this.path.length === 0 || this.pathIdx >= this.path.length) {
           this.say(pick(VISITOR_ARRIVAL_SPEECH[this.type] || VISITOR_ARRIVAL_SPEECH.walkin), 80);
-          if (this.type === 'walkin') {
+          if (this.type === 'walkin' && !this.targetRoomType) {
             this.state = 'browsing';
             this.stateTimer = 0;
             this._browseNextRoom();
@@ -290,11 +295,18 @@ export class Visitor {
             // No target room — wait in lobby
             this.state = 'seated_waiting';
             this.needsAgent = true;
-            this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : null;
+            this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : this.type === 'customer' ? 'shopfront' : null;
             break;
           }
-          // Check if room is occupied by another visitor
+          // Check if room is occupied — try alternate rooms first
           if (isRoomOccupiedByVisitor(this.targetRoom, visitors || [])) {
+            const altRooms = this.targetRoomType
+              ? findAllRoomsByType(this.targetRoomType).filter(r => r !== this.targetRoom && !isRoomOccupiedByVisitor(r, visitors || []))
+              : [];
+            if (altRooms.length > 0) {
+              this._moveToRoomDoor(altRooms[0]);
+              break; // Re-walk to alternate room
+            }
             this.state = 'queuing_outside';
             this.stateTimer = 0;
             this.say(pick(VISITOR_QUEUE_SPEECH[this.type] || VISITOR_QUEUE_SPEECH.walkin), 80);
@@ -317,6 +329,14 @@ export class Visitor {
           this.stateTimer = 0;
           if (!this.targetRoom || !isRoomOccupiedByVisitor(this.targetRoom, visitors || [])) {
             this._enterRoom();
+          } else if (this.targetRoomType) {
+            // Try an alternate room of the same type
+            const altRooms = findAllRoomsByType(this.targetRoomType)
+              .filter(r => r !== this.targetRoom && !isRoomOccupiedByVisitor(r, visitors || []));
+            if (altRooms.length > 0) {
+              this._moveToRoomDoor(altRooms[0]);
+              this.state = 'walking_to_door';
+            }
           }
         }
         break;
@@ -331,7 +351,7 @@ export class Visitor {
           this.state = 'seated_waiting';
           this.stateTimer = 0;
           this.needsAgent = true;
-          this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : null;
+          this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : this.type === 'customer' ? 'shopfront' : null;
         }
         break;
 
@@ -474,14 +494,28 @@ export class Visitor {
 
   _navigateToTarget() {
     if (this.targetRoomType) {
-      const room = findRoomByType(this.targetRoomType);
+      // Pick the least-occupied room of this type to distribute visitors
+      const allRooms = findAllRoomsByType(this.targetRoomType);
+      let room = null;
+      if (allRooms.length > 1) {
+        // Count visitors targeting each room, prefer unoccupied
+        let best = null, bestCount = Infinity;
+        for (const r of allRooms) {
+          const count = (this.constructor._allVisitors || [])
+            .filter(v => v !== this && v.targetRoom === r && v.state !== 'gone' && v.state !== 'leaving').length;
+          if (count < bestCount) { bestCount = count; best = r; }
+        }
+        room = best;
+      } else {
+        room = allRooms[0] || null;
+      }
       if (room) {
         this._moveToRoomDoor(room);
       } else {
         // Target room doesn't exist, request agent in lobby
         this.state = 'seated_waiting';
         this.needsAgent = true;
-        this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : null;
+        this.requestedRole = this.type === 'client' ? 'sales' : this.type === 'candidate' ? 'hr' : this.type === 'customer' ? 'shopfront' : null;
       }
     }
   }
@@ -489,7 +523,14 @@ export class Visitor {
   _browseNextRoom() {
     const rooms = getRoomInstances().filter(r => r.constructionProgress >= 1);
     if (rooms.length === 0) return;
-    const room = pick(rooms);
+    // Prefer shopfront on first visit if available
+    let room;
+    if (this.browseRoomsVisited === 0) {
+      const shopfront = rooms.find(r => r.type === 'shopfront');
+      room = shopfront || pick(rooms);
+    } else {
+      room = pick(rooms);
+    }
     const walkable = getWalkable();
     const cx = room.x + Math.floor(room.w / 2);
     const cy = room.y + Math.floor(room.h / 2);

@@ -32,6 +32,7 @@ export const ROOM_COSTS = {
   it:         35,
   rd:         45,
   warehouse:  10,
+  shopfront:  20,
   breakroom:  10,
   meeting:    15,
   lobby:       0,
@@ -57,6 +58,7 @@ export const AGENT_SALARY = {
   it_admin:       80,
   researcher:     95,
   warehouse_mgr:  55,
+  shop_assistant: 65,
 };
 
 export const HIRE_COST = 800;
@@ -182,6 +184,10 @@ export const OFFICE_SYNERGIES = {
   ],
   pr: [
     { requires: 'content', bonus: 0.10, label: 'Story angles' },
+  ],
+  shopfront: [
+    { requires: 'design', bonus: 0.15, label: 'Fashion design' },
+    { requires: 'marketing', bonus: 0.10, label: 'Promotions' },
   ],
 };
 
@@ -448,6 +454,22 @@ export const OFFICE_TYPES = {
     ],
     workTiles: [[3, 2], [5, 2]],
   },
+  shopfront: {
+    name: 'Shopfront', icon: '👗', accent: '#e068a0',
+    accentRGB: [224,104,160], floorBase: [72,62,68], wallBase: [92,80,86], floorPattern: 'wood',
+    size: { w: 7, h: 5 }, cost: 1200,
+    furniture: [
+      { type: 'mannequin', lx: 0, ly: 0 },
+      { type: 'mannequin', lx: 0, ly: 2 },
+      { type: 'clothingrack', lx: 1, ly: 0 },
+      { type: 'clothingrack', lx: 1, ly: 2 },
+      { type: 'register', lx: 4, ly: 1, interactive: true, configKey: 'pricing_strategy', label: 'Pricing Strategy' },
+      { type: 'chair', lx: 3, ly: 3 },
+      { type: 'chair', lx: 5, ly: 3 },
+      { type: 'plant', lx: 6, ly: 4 },
+    ],
+    workTiles: [[2, 2], [5, 2], [3, 3]],
+  },
 };
 
 export const COMMON_ROOMS = {
@@ -514,6 +536,7 @@ export const AGENT_ROLES = {
   it_admin:       { title: 'IT Admin',         office: 'it',          color: '#6090b0', emoji: '🖥️', accessory: 'headphones' },
   researcher:     { title: 'Researcher',       office: 'rd',          color: '#a060c0', emoji: '🔬', accessory: 'glasses' },
   warehouse_mgr:  { title: 'Warehouse Mgr',   office: 'warehouse',   color: '#8a7a60', emoji: '📦', accessory: 'cap' },
+  shop_assistant: { title: 'Shop Assistant',  office: 'shopfront',   color: '#e068a0', emoji: '👗', accessory: 'pen' },
 };
 
 // ─── Office guide (business identity, money drivers) ───────
@@ -637,6 +660,13 @@ export const OFFICE_GUIDE = {
     tips: 'Critical for e-commerce and maker companies. Build this when you\'re maxing out on simultaneous projects.',
     projects: 'Inventory Audit, Fulfillment Run',
   },
+  shopfront: {
+    role: 'Revenue Floor', impact: 'Direct customer sales and foot traffic.',
+    guide: 'Your shopfront is where customers browse, try on clothes, and buy. Shop assistants help customers, arrange displays, and process sales.',
+    howItWorks: 'Assistants complete visual merchandising, seasonal collections, and flash sales. Walk-in customers generate revenue when served.',
+    tips: 'Pair with Design for a 15% fashion design synergy. More walk-in traffic = more sales without heavy marketing spend.',
+    projects: 'Visual Merchandising, Seasonal Collection, Flash Sale',
+  },
   breakroom: {
     role: 'Morale', impact: 'Restores mood and long-term productivity.',
     guide: 'A place for agents to rest and recharge. Tired agents lose efficiency — the breakroom lets them recover energy quickly instead of slowly idling.',
@@ -662,7 +692,7 @@ export const OFFICE_GUIDE = {
 
 // ─── P&L Office categories (static fallback) ────────────
 export const OFFICE_CATEGORIES = {
-  delivery:   { label: 'Delivery',   icon: '⚡', offices: ['seo','content','video','design','data','engineering','workshop'] },
+  delivery:   { label: 'Delivery',   icon: '⚡', offices: ['seo','content','video','design','data','engineering','workshop','shopfront'] },
   growth:     { label: 'Growth',     icon: '📈', offices: ['sales','marketing','pr'] },
   operations: { label: 'Operations', icon: '🏗️', offices: ['support','hr','finance','legal','it','rd','warehouse'] },
   common:     { label: 'Common',     icon: '🏠', offices: ['lobby','breakroom','meeting'] },
@@ -681,6 +711,7 @@ export const COMPANY_OFFICE_ROLES = {
   maker_co:         { delivery: ['workshop','engineering','warehouse'],          growth: ['sales','design'],                    infrastructure: ['support','hr','finance','legal','it','rd'] },
   consulting_firm:  { delivery: ['data','engineering','content'],               growth: ['sales','pr','marketing'],             infrastructure: ['support','hr','finance','legal','it'] },
   staffing_agency:  { delivery: ['hr','support'],                               growth: ['sales','marketing','pr'],             infrastructure: ['finance','legal','it','data','content'] },
+  fashion_retail:   { delivery: ['shopfront','design','warehouse'],             growth: ['sales','marketing','pr'],              infrastructure: ['support','hr','finance','legal','it','content'] },
 };
 
 // ─── Spawn weight per office role ────────────────────────
@@ -705,7 +736,6 @@ export const PROJECT_TEMPLATES = [
   { name: 'Promo Video',       icon: '🎬', basePay: 1800, office: 'video',   phases: ['script','film','edit'], time: 14, color: '#e07030' },
   { name: 'Brand Redesign',    icon: '🎨', basePay: 2200, office: 'design',  phases: ['concept','design','refine'], time: 16, color: '#d058a0' },
   { name: 'Analytics Report',  icon: '📊', basePay: 1200, office: 'data',    phases: ['query','analyze','visualize'], time: 12, color: '#4090e0' },
-  { name: 'Ticket Backlog',    icon: '🎧', basePay: 700,  office: 'support', phases: ['triage','resolve','followup'], time: 7, color: '#40b0b0' },
   { name: 'Keyword Research',  icon: '🔑', basePay: 800,  office: 'seo',     phases: ['research','cluster','report'], time: 9, color: '#50b868' },
   { name: 'Social Campaign',   icon: '📱', basePay: 1000, office: 'content', phases: ['plan','create','schedule'], time: 10, color: '#9068d0' },
   { name: 'Landing Page',      icon: '🎨', basePay: 1500, office: 'design',  phases: ['wireframe','design','polish'], time: 12, color: '#d058a0' },
@@ -719,19 +749,26 @@ export const PROJECT_TEMPLATES = [
   { name: 'Ad Campaign',       icon: '📣', basePay: 1200, office: 'marketing',   phases: ['research','create','launch'], time: 10, color: '#c05080' },
   { name: 'Press Release',     icon: '📰', basePay: 800,  office: 'pr',          phases: ['draft','pitch','publish'], time: 8,  color: '#70a050' },
   { name: 'Media Feature',     icon: '🌟', basePay: 1500, office: 'pr',          phases: ['research','interview','edit'], time: 12, color: '#70a050' },
-  // Operations
-  { name: 'Hiring Round',      icon: '👥', basePay: 500,  office: 'hr',          phases: ['screen','interview','offer'], time: 8,  color: '#d0a050' },
-  { name: 'Team Training',     icon: '📋', basePay: 400,  office: 'hr',          phases: ['plan','prepare','deliver'], time: 6,  color: '#d0a050' },
-  { name: 'Quarterly Audit',   icon: '🏦', basePay: 700,  office: 'finance',     phases: ['collect','reconcile','report'], time: 10, color: '#508060' },
-  { name: 'Budget Forecast',   icon: '📈', basePay: 600,  office: 'finance',     phases: ['model','review','present'], time: 8,  color: '#508060' },
-  { name: 'Contract Review',   icon: '⚖️', basePay: 900,  office: 'legal',       phases: ['review','redline','finalize'], time: 10, color: '#806090' },
-  { name: 'Compliance Check',  icon: '📑', basePay: 700,  office: 'legal',       phases: ['audit','document','certify'], time: 8,  color: '#806090' },
-  { name: 'Server Migration',  icon: '🖥️', basePay: 1000, office: 'it',          phases: ['plan','migrate','verify'], time: 12, color: '#4080a0' },
-  { name: 'Security Audit',    icon: '🔒', basePay: 800,  office: 'it',          phases: ['scan','patch','harden'], time: 10, color: '#4080a0' },
-  { name: 'R&D Experiment',    icon: '🔬', basePay: 1200, office: 'rd',          phases: ['hypothesize','test','analyze'], time: 14, color: '#7060b0' },
-  { name: 'Innovation Sprint', icon: '💡', basePay: 1500, office: 'rd',          phases: ['ideate','prototype','validate'], time: 16, color: '#7060b0' },
-  { name: 'Inventory Audit',   icon: '📦', basePay: 400,  office: 'warehouse',   phases: ['count','reconcile','update'], time: 6,  color: '#8b7355' },
-  { name: 'Fulfillment Run',   icon: '🚚', basePay: 600,  office: 'warehouse',   phases: ['pick','pack','ship'], time: 8,  color: '#8b7355' },
+  // Operations — cost centers: these cost money but enable passive bonuses
+  // support: reputation maintenance, customer satisfaction
+  { name: 'Ticket Backlog',    icon: '🎧', basePay: -150, office: 'support', phases: ['triage','resolve','followup'], time: 7,  color: '#40b0b0', cost: true },
+  { name: 'Hiring Round',      icon: '👥', basePay: -200, office: 'hr',          phases: ['screen','interview','offer'], time: 8,  color: '#d0a050', cost: true },
+  { name: 'Team Training',     icon: '📋', basePay: -250, office: 'hr',          phases: ['plan','prepare','deliver'], time: 6,  color: '#d0a050', cost: true },
+  // finance: +15% pay bonus on all projects, loan rate improvements
+  { name: 'Quarterly Audit',   icon: '🏦', basePay: -300, office: 'finance',     phases: ['collect','reconcile','report'], time: 10, color: '#508060', cost: true },
+  { name: 'Budget Forecast',   icon: '📈', basePay: -200, office: 'finance',     phases: ['model','review','present'], time: 8,  color: '#508060', cost: true },
+  // legal: +15% project pay on ALL completions
+  { name: 'Contract Review',   icon: '⚖️', basePay: -350, office: 'legal',       phases: ['review','redline','finalize'], time: 10, color: '#806090', cost: true },
+  { name: 'Compliance Check',  icon: '📑', basePay: -250, office: 'legal',       phases: ['audit','document','certify'], time: 8,  color: '#806090', cost: true },
+  // it: +8% global agent efficiency
+  { name: 'Server Migration',  icon: '🖥️', basePay: -400, office: 'it',          phases: ['plan','migrate','verify'], time: 12, color: '#4080a0', cost: true },
+  { name: 'Security Audit',    icon: '🔒', basePay: -300, office: 'it',          phases: ['scan','patch','harden'], time: 10, color: '#4080a0', cost: true },
+  // rd: periodic breakthroughs boost project pay
+  { name: 'R&D Experiment',    icon: '🔬', basePay: -500, office: 'rd',          phases: ['hypothesize','test','analyze'], time: 14, color: '#7060b0', cost: true },
+  { name: 'Innovation Sprint', icon: '💡', basePay: -600, office: 'rd',          phases: ['ideate','prototype','validate'], time: 16, color: '#7060b0', cost: true },
+  // warehouse: +20% project capacity
+  { name: 'Inventory Audit',   icon: '📦', basePay: -100, office: 'warehouse',   phases: ['count','reconcile','update'], time: 6,  color: '#8b7355', cost: true },
+  { name: 'Fulfillment Run',   icon: '🚚', basePay: -200, office: 'warehouse',   phases: ['pick','pack','ship'], time: 8,  color: '#8b7355', cost: true },
   // Client-facing projects — only spawn when office is in delivery role (native or diversified)
   { name: 'Executive Search',  icon: '👤', basePay: 2200, office: 'hr',          phases: ['profile','source','place'], time: 14, color: '#9080c0', clientFacing: true },
   { name: 'Talent Placement',  icon: '🤝', basePay: 1800, office: 'hr',          phases: ['assess','match','onboard'], time: 12, color: '#9080c0', clientFacing: true },
@@ -750,6 +787,18 @@ export const PROJECT_TEMPLATES = [
   { name: 'Data Strategy',     icon: '📊', basePay: 1800, office: 'data',        phases: ['audit','roadmap','present'], time: 12, color: '#4090e0', clientFacing: true },
   { name: 'Tech Due Diligence',icon: '🧪', basePay: 2600, office: 'rd',          phases: ['assess','test','report'], time: 14, color: '#7060b0', clientFacing: true },
   { name: 'Patent Research',   icon: '📜', basePay: 2200, office: 'rd',          phases: ['search','analyze','brief'], time: 12, color: '#7060b0', clientFacing: true },
+  { name: 'Visual Merchandising', icon: '🪟', basePay: 800,  office: 'shopfront', phases: ['plan','arrange','display'], time: 8,  color: '#e068a0' },
+  { name: 'Seasonal Collection',  icon: '👗', basePay: 1500, office: 'shopfront', phases: ['curate','price','launch'], time: 12, color: '#e068a0' },
+  { name: 'Flash Sale',           icon: '⚡', basePay: 600,  office: 'shopfront', phases: ['plan','promote','execute'], time: 6,  color: '#e068a0' },
+  { name: 'Lookbook Shoot',       icon: '📸', basePay: 1800, office: 'design',    phases: ['style','shoot','edit'], time: 14, color: '#d058a0' },
+  { name: 'Fashion Show',         icon: '🎭', basePay: 2500, office: 'design',    phases: ['plan','rehearse','show'], time: 16, color: '#d058a0' },
+  { name: 'Pop-up Event',         icon: '🎪', basePay: 1200, office: 'shopfront', phases: ['location','setup','run'], time: 10, color: '#e068a0', clientFacing: true },
+  { name: 'Wholesale Deal',       icon: '🤝', basePay: 2000, office: 'sales',     phases: ['prospect','negotiate','fulfill'], time: 12, color: '#e0a030', clientFacing: true },
+  { name: 'Inventory Restock',    icon: '📦', basePay: -300, office: 'warehouse', phases: ['order','receive','shelve'], time: 6,  color: '#8a7a60', cost: true },
+  // warehouse: client-facing logistics services (revenue when warehouse is delivery)
+  { name: 'Fulfillment Service',  icon: '📬', basePay: 1200, office: 'warehouse', phases: ['setup','process','deliver'], time: 10, color: '#8b7355', clientFacing: true },
+  { name: 'Dropship Order',       icon: '🚛', basePay: 900,  office: 'warehouse', phases: ['source','route','ship'], time: 8,   color: '#8b7355', clientFacing: true },
+  { name: 'Logistics Consulting', icon: '🗺️', basePay: 1600, office: 'warehouse', phases: ['audit','optimize','report'], time: 12, color: '#8b7355', clientFacing: true },
 ];
 
 // ─── Speech lines ──────────────────────────────────────────
@@ -772,6 +821,7 @@ export const SPEECH_WORKING = {
   it:          ['Updating servers...', 'Patching security...', 'Monitoring uptime...', 'Backup running...'],
   rd:          ['Running experiment...', 'Analyzing data...', 'Testing hypothesis...', 'Writing paper...'],
   warehouse:   ['Checking inventory...', 'Packing orders...', 'Receiving shipment...', 'Organizing stock...'],
+  shopfront:   ['Helping a customer...', 'Restocking shelves...', 'Arranging display...', 'Processing sale...', 'Folding clothes...'],
 };
 export const SPEECH_THINKING = ['Hmm...', 'Let me think...', 'Processing...', 'Analyzing...', 'One moment...', '🤔'];
 export const SPEECH_IDLE = ['☕ Coffee time!', 'Ready to go!', 'What\'s next?', '💤 Quiet day...', 'Stretching...'];
@@ -788,12 +838,14 @@ export const VISITOR_ARRIVAL_SPEECH = {
   client:    ['Here for a meeting.', 'We need your services.', 'Let\'s talk business!', 'Is anyone available?'],
   candidate: ['I\'m here for the interview.', 'I have an appointment.', 'Excited to be here!', 'Reporting for interview.'],
   walkin:    ['Just passing by!', 'Nice office!', 'Love what you\'ve done here.', 'Mind if I look around?'],
+  customer:  ['Just browsing!', 'Love this store!', 'Anything on sale?', 'Looking for something special...'],
 };
 
 export const VISITOR_QUEUE_SPEECH = {
   client:    ['I\'ll wait...', 'Room\'s busy, huh?', 'Guess I\'m next.'],
   candidate: ['Still waiting...', 'Nervous...', 'Hope it\'s soon.'],
   walkin:    ['I\'ll come back.', 'Seems busy.', 'No rush.'],
+  customer:  ['I\'ll keep looking.', 'Busy in here!', 'No worries.'],
 };
 
 export const VISITOR_DIALOGUES = {
@@ -856,6 +908,32 @@ export const VISITOR_DIALOGUES = {
       ['agent', 'We\'d love to help!', 35],
     ],
   ],
+  customer: [
+    [
+      ['visitor', 'Do you have this in medium?', 40],
+      ['agent', 'Let me check! 👗', 35],
+      ['visitor', 'I love the color.', 35],
+      ['agent', 'It\'s from our new collection.', 40],
+      ['visitor', 'I\'ll take it!', 35],
+      ['agent', 'Great choice! 🛍️', 40],
+    ],
+    [
+      ['visitor', 'What\'s on sale today?', 40],
+      ['agent', 'Everything on this rack is 30% off!', 45],
+      ['visitor', 'Oh, these are lovely.', 35],
+      ['agent', 'Want to try them on?', 35],
+      ['visitor', 'Yes please!', 30],
+      ['agent', 'The fitting room is right here. ✨', 40],
+    ],
+    [
+      ['visitor', 'I need an outfit for a wedding.', 45],
+      ['agent', 'I have some perfect options!', 40],
+      ['visitor', 'Something elegant but not too flashy.', 45],
+      ['agent', 'How about this one?', 35],
+      ['visitor', 'It\'s perfect!', 30],
+      ['agent', 'Let me ring that up for you! 💳', 40],
+    ],
+  ],
 };
 
 // ─── IQ Labels ──────────────────────────────────────────
@@ -892,6 +970,7 @@ export const ENERGY_DRAIN = {
   it_admin:       0.00012,
   researcher:     0.00014,
   warehouse_mgr:  0.00009,
+  shop_assistant: 0.00009,
 };
 
 // Energy recovery rate per ms during break (in break room)
@@ -1187,6 +1266,15 @@ export const EQUIPMENT_CONFIGS = {
     ],
     default: 'steady',
   },
+  pricing_strategy: {
+    label: 'Pricing Strategy', icon: '🏷️',
+    options: [
+      { key: 'discount',  label: 'Discount',  desc: 'Lower prices, more walk-in sales (pay ×0.7, walk-in +40%)' },
+      { key: 'standard',  label: 'Standard',  desc: 'Balanced pricing and foot traffic' },
+      { key: 'premium',   label: 'Premium',   desc: 'Higher prices, fewer sales (pay ×1.4, walk-in −30%)' },
+    ],
+    default: 'standard',
+  },
   perks_package: {
     label: 'Perks Package', icon: '🏋️',
     options: [
@@ -1232,7 +1320,7 @@ export const COMPANY_TYPES = {
     tagline: 'Run an e-commerce empire',
     available: ['marketing','design','content','sales','support','warehouse','data','pr','hr','finance','it','legal'],
     startUnlocked: ['lobby','sales','warehouse','support'],
-    bonuses: { marketingEfficiency: 1.3, bulkOrderChance: 0.10 },
+    bonuses: { marketingEfficiency: 1.3, bulkOrderChance: 0.12 },
   },
   creative_house: {
     name: 'Creative House',
@@ -1256,7 +1344,7 @@ export const COMPANY_TYPES = {
     tagline: 'Design, build & ship physical products',
     available: ['workshop','warehouse','engineering','design','sales','support','rd','hr','finance','legal','it'],
     startUnlocked: ['lobby','workshop','warehouse'],
-    bonuses: { bulkOrderChance: 0.15 },
+    bonuses: { bulkOrderChance: 0.15, projectPayMultiplier: 1.1 },
   },
   consulting_firm: {
     name: 'Consulting Firm',
@@ -1272,7 +1360,15 @@ export const COMPANY_TYPES = {
     tagline: 'Find the right people for every role',
     available: ['hr','support','sales','marketing','pr','finance','legal','it','data','content'],
     startUnlocked: ['lobby','hr','support','sales'],
-    bonuses: { hireCostDiscount: 0.5, founderDemandMultiplier: 2.5 },
+    bonuses: { hireCostDiscount: 0.5, founderDemandMultiplier: 2.5, projectPayMultiplier: 1.2 },
+  },
+  fashion_retail: {
+    name: 'Fashion Store',
+    icon: '👗',
+    tagline: 'Style, sell & grow a fashion empire',
+    available: ['shopfront','design','warehouse','sales','marketing','pr','support','hr','finance','legal','it','content'],
+    startUnlocked: ['lobby','shopfront','warehouse'],
+    bonuses: { walkinMultiplier: 3.0, organicMultiplier: 1.0 },
   },
 };
 
@@ -1286,5 +1382,6 @@ export const GROWTH_MODELS = {
   maker_co:        { model: 'physical',     label: 'Manufacturing Growth' },
   consulting_firm: { model: 'premium',      label: 'Premium Growth' },
   staffing_agency: { model: 'linear',       label: 'Placement Growth' },
+  fashion_retail:  { model: 'physical',     label: 'Retail Growth' },
 };
 

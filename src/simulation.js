@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { ECONOMY, PROJECT_TEMPLATES, TUTORIAL_HINTS, COMPANY_TYPES, OFFICE_TYPES, AGENT_ROLES, AGENT_SALARY, SPEECH_RAISE, SPEECH_QUIT, ALIGNMENT, SPEECH_QUIT_MISALIGNED, SPEECH_ALIGNED, SPEECH_TEAM_BUILDING, GROWTH_MODELS } from './config.js';
-import { getRoomInstances, findRoomByType, countRoomsByType, updateConstruction } from './map.js';
+import { getRoomInstances, findRoomByType, findAllRoomsByType, countRoomsByType, updateConstruction } from './map.js';
 import { G, trackEvent } from './game.js';
 import { Project } from './project.js';
 import {
@@ -117,50 +117,64 @@ function updateProjects(dt) {
           // Support bonus: +1 reputation
           const supportRepBonus = hasSupportStaffed() ? 1 : 0;
 
-          // Project complete! Apply Legal bonus
-          let finalPay = p.getFinalPay();
-          const legalBonus = getLegalPayBonus();
-          if (legalBonus > 0) finalPay = Math.round(finalPay * (1 + legalBonus));
-
-          // R&D breakthrough bonus
-          if (G.rdBreakthrough && G.rdBreakthrough.office === p.targetOffice && G.week <= G.rdBreakthrough.expiresWeek) {
-            finalPay = Math.round(finalPay * 1.20);
-          }
-
-          // Company type project pay multiplier
-          const companyDef = COMPANY_TYPES[G.companyType] || {};
-          const companyPayMult = companyDef.bonuses?.projectPayMultiplier || 1.0;
-          if (companyPayMult !== 1.0) finalPay = Math.round(finalPay * companyPayMult);
-
-          // Consulting/reputation premium: steep non-linear curve
-          if (companyDef.bonuses?.reputationPayMultiplier) {
-            const premium = getConsultingPremium();
-            finalPay = Math.round(finalPay * premium);
-          }
-
-          // Specialize branch: +20% on core delivery projects
-          if (hasSpecializeBranch() && getOfficeRole(p.targetOffice) === 'delivery' && !G.diversifiedOffices.has(p.targetOffice)) {
-            finalPay = Math.round(finalPay * 1.20);
-          }
-
-          // Diversification synergy bonus
-          const divSynergy = getDiversificationSynergyBonus();
-          if (divSynergy.payBonus > 0) {
-            finalPay = Math.round(finalPay * (1 + divSynergy.payBonus));
-          }
-
-          // Sales commission deduction (higher commission = bigger deals but eats profit)
+          // Project complete!
+          const isCostProject = p.template?.cost === true;
+          let finalPay;
           let commissionCost = 0;
-          if (p.salesClosed) {
-            const { commissionRate } = getSalesCommission();
-            if (commissionRate > 0) {
-              commissionCost = Math.round(finalPay * commissionRate);
-              finalPay -= commissionCost;
+
+          if (isCostProject) {
+            // Cost projects: fixed operational expense, no bonuses applied
+            finalPay = Math.round(p.pay); // negative basePay
+          } else {
+            // Revenue projects: apply all pay bonuses
+            finalPay = p.getFinalPay();
+            const legalBonus = getLegalPayBonus();
+            if (legalBonus > 0) finalPay = Math.round(finalPay * (1 + legalBonus));
+
+            // R&D breakthrough bonus
+            if (G.rdBreakthrough && G.rdBreakthrough.office === p.targetOffice && G.week <= G.rdBreakthrough.expiresWeek) {
+              finalPay = Math.round(finalPay * 1.20);
+            }
+
+            // Company type project pay multiplier
+            const companyDef2 = COMPANY_TYPES[G.companyType] || {};
+            const companyPayMult = companyDef2.bonuses?.projectPayMultiplier || 1.0;
+            if (companyPayMult !== 1.0) finalPay = Math.round(finalPay * companyPayMult);
+
+            // Consulting/reputation premium: steep non-linear curve
+            if (companyDef2.bonuses?.reputationPayMultiplier) {
+              const premium = getConsultingPremium();
+              finalPay = Math.round(finalPay * premium);
+            }
+
+            // Specialize branch: +20% on core delivery projects
+            if (hasSpecializeBranch() && getOfficeRole(p.targetOffice) === 'delivery' && !G.diversifiedOffices.has(p.targetOffice)) {
+              finalPay = Math.round(finalPay * 1.20);
+            }
+
+            // Diversification synergy bonus
+            const divSynergy = getDiversificationSynergyBonus();
+            if (divSynergy.payBonus > 0) {
+              finalPay = Math.round(finalPay * (1 + divSynergy.payBonus));
+            }
+
+            // Sales commission deduction (higher commission = bigger deals but eats profit)
+            if (p.salesClosed) {
+              const { commissionRate } = getSalesCommission();
+              if (commissionRate > 0) {
+                commissionCost = Math.round(finalPay * commissionRate);
+                finalPay -= commissionCost;
+              }
             }
           }
+
           G.money += finalPay;
-          G.totalRevenue += finalPay;
-          G.dayRevenueAcc += finalPay;
+          if (isCostProject) {
+            G.dayCostAcc = (G.dayCostAcc || 0) + Math.abs(finalPay);
+          } else {
+            G.totalRevenue += finalPay;
+            G.dayRevenueAcc += finalPay;
+          }
           G.metrics.officeRevenue[p.targetOffice] = (G.metrics.officeRevenue[p.targetOffice] || 0) + finalPay;
           const repDeltaBase = p.getReputationChange() + supportRepBonus;
           const prRepMult = getPRReputationBonus();
@@ -199,7 +213,7 @@ function updateProjects(dt) {
 
           // Particles
           const room = getRoomInstances().find(r => r.typeKey === p.targetOffice);
-          if (room) {
+          if (room && !isCostProject) {
             const s = toScreen(room.x + room.w / 2, room.y + room.h / 2);
             for (let i = 0; i < 8; i++) {
               G.particles.push(createParticle(s.x, s.y, 'money'));
@@ -208,11 +222,18 @@ function updateProjects(dt) {
 
           const qualityStars = p.qualityScore > 0.7 ? ' ⭐' : p.qualityScore > 0.4 ? '' : ' 😬';
           sfxProjectComplete();
-          sfxMoney();
-          showToast(
-            `✅ ${p.name}${qualityStars}<span class="toast-money">+$${finalPay.toLocaleString()}</span>`,
-            { html: true }
-          );
+          if (isCostProject) {
+            showToast(
+              `✅ ${p.name}${qualityStars}<span class="toast-money" style="color:#e06050">-$${Math.abs(finalPay).toLocaleString()}</span>`,
+              { html: true }
+            );
+          } else {
+            sfxMoney();
+            showToast(
+              `✅ ${p.name}${qualityStars}<span class="toast-money">+$${finalPay.toLocaleString()}</span>`,
+              { html: true }
+            );
+          }
 
           // Synergy toast
           if (synergy.activeLabels.length > 0) {
@@ -540,13 +561,13 @@ function processWeek() {
     }
   }
 
-  // Weekly meeting boost: if meeting room exists, all agents get mood boost
+  // Weekly standup: if meeting room exists, everyone gathers physically
   const hasMeeting = findRoomByType('meeting');
-  if (hasMeeting) {
-    for (const a of G.agents) {
-      a.onMeetingBoost();
-    }
-    showToast('🤝 Weekly standup! Team morale boosted.');
+  if (hasMeeting && !G.standupActive && !G.teamBuildingActive) {
+    startStandup(hasMeeting);
+  } else if (hasMeeting && !G.standupActive) {
+    // Team building active, just give the boost silently
+    for (const a of G.agents) a.onMeetingBoost();
   }
 }
 
@@ -701,7 +722,7 @@ function spawnProjects(dt) {
   }
 
   // Hard deadline: projects that exceed deadline are FAILED — no payment
-  const expired = G.projects.filter(p => p.state !== 'done' && p.dayAge > p.deadline);
+  const expired = G.projects.filter(p => p.state !== 'done' && p.dayAge > p.deadline && !p.template?.cost);
   for (const p of expired) {
     // Release assigned agents
     for (const a of p.assignedAgents) {
@@ -856,25 +877,197 @@ function updateParticles(dt) {
   }
 }
 
+// ─── Weekly Standup Meeting ──────────────────────────────
+const STANDUP_CHEERS = [
+  'Yeah!', 'Let\'s go!', 'Wooo!', 'Team! 🙌', 'All in!',
+  'Let\'s crush it!', 'High five! ✋', 'Go team!', 'Bring it!', 'Heck yeah!',
+];
+
+function startStandup(meetingRoom) {
+  G.standupActive = true;
+  G.standupPhase = 'gather';
+  G.standupTimer = 0;
+
+  // Center of meeting room
+  const cx = meetingRoom.x + Math.floor(meetingRoom.w / 2);
+  const cy = meetingRoom.y + Math.floor(meetingRoom.h / 2);
+  G.standupCenter = { x: cx, y: cy };
+
+  // Send available agents — those serving visitors stay behind
+  const allAgents = G.ceo ? [G.ceo, ...G.agents.filter(a => a !== G.ceo)] : [...G.agents];
+  for (const a of allAgents) {
+    if (a._servingVisitor) continue; // don't abandon customers!
+    a.inMeeting = true;
+    // Release current task
+    if (a.task) {
+      a.task.state = 'waiting';
+      a.task.assignedAgents = a.task.assignedAgents.filter(w => w !== a);
+      a.task = null;
+    }
+    a.state = 'walking';
+    a.moveToRoom(meetingRoom.id);
+  }
+  showToast('🤝 Weekly standup! Everyone to the meeting room.');
+}
+
+function updateStandup(dt) {
+  if (!G.standupActive) return;
+
+  // Only agents who are actually attending (inMeeting=true)
+  const attending = G.agents.filter(a => a.inMeeting);
+  if (attending.length === 0) { endStandup(); return; }
+
+  if (G.standupPhase === 'gather') {
+    // Wait for everyone to arrive (or timeout)
+    G.standupTimer += dt;
+    const allArrived = attending.every(a => a.state !== 'walking');
+    if (allArrived || G.standupTimer > 300) {
+      // Arrange in circle around center
+      G.standupPhase = 'huddle';
+      G.standupTimer = 0;
+      const cx = G.standupCenter.x;
+      const cy = G.standupCenter.y;
+      const n = attending.length;
+      const radius = Math.max(1.2, Math.min(2.5, n * 0.4));
+      for (let i = 0; i < n; i++) {
+        const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+        const tx = cx + Math.cos(angle) * radius;
+        const ty = cy + Math.sin(angle) * radius;
+        attending[i].x = tx;
+        attending[i].y = ty;
+        attending[i].state = 'idle';
+        attending[i].bobY = 0;
+        // Face toward center
+        const dx = cx - tx, dy = cy - ty;
+        if (Math.abs(dx) > Math.abs(dy)) attending[i].dir = dx > 0 ? 1 : 3;
+        else attending[i].dir = dy > 0 ? 2 : 0;
+      }
+    }
+  } else if (G.standupPhase === 'huddle') {
+    // Brief huddle — agents bob gently, look at each other
+    G.standupTimer += dt;
+    for (const a of attending) {
+      a.bobY = Math.sin(a.frame * 0.06 + a.id) * 1;
+      a.state = 'idle'; // keep them in place
+    }
+    if (G.standupTimer > 120) {
+      // Transition to cheer
+      G.standupPhase = 'cheer';
+      G.standupTimer = 0;
+      for (const a of attending) {
+        const cheer = STANDUP_CHEERS[Math.floor(Math.random() * STANDUP_CHEERS.length)];
+        a.say(cheer, 80);
+      }
+    }
+  } else if (G.standupPhase === 'cheer') {
+    // Cheer phase — agents jump/bounce excitedly
+    G.standupTimer += dt;
+    for (const a of attending) {
+      // Excited jumping animation
+      a.bobY = -Math.abs(Math.sin((G.standupTimer + a.id * 5) * 0.15)) * 6;
+    }
+    if (G.standupTimer > 60) {
+      endStandup();
+    }
+  }
+}
+
+function endStandup() {
+  // Attending agents: release from meeting
+  for (const a of G.agents) {
+    if (a.inMeeting) {
+      a.inMeeting = false;
+      a.bobY = 0;
+      a.state = 'idle';
+    }
+    // Everyone gets the morale boost (even those who stayed serving customers)
+    a.onMeetingBoost();
+  }
+  G.standupActive = false;
+  G.standupPhase = null;
+  G.standupTimer = 0;
+  G.standupCenter = null;
+  showToast('🤝 Standup done! Team morale boosted.');
+}
+
 // ─── Team Building (CEO action) ─────────────────────────
 function updateTeamBuilding(dt) {
   if (!G.teamBuildingActive) return;
 
-  G.teamBuildingTimer -= dt;
+  // Only animate agents actually attending (inMeeting=true)
+  const attending = G.agents.filter(a => a.inMeeting);
+
+  // Phase: gather — wait for agents to arrive, then form circle
+  if (G.teamBuildingPhase === 'gather') {
+    G.teamBuildingTimer -= dt;
+    const allArrived = attending.every(a => a.state !== 'walking');
+    if (allArrived || G.teamBuildingTimer <= (ALIGNMENT.team_building_ticks - 300)) {
+      G.teamBuildingPhase = 'circle';
+      // Arrange in circle
+      if (G.standupCenter) {
+        const cx = G.standupCenter.x, cy = G.standupCenter.y;
+        const n = attending.length;
+        const radius = Math.max(1.2, Math.min(2.5, n * 0.4));
+        for (let i = 0; i < n; i++) {
+          const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+          attending[i].x = cx + Math.cos(angle) * radius;
+          attending[i].y = cy + Math.sin(angle) * radius;
+          attending[i].state = 'idle';
+          const dx = cx - attending[i].x, dy = cy - attending[i].y;
+          if (Math.abs(dx) > Math.abs(dy)) attending[i].dir = dx > 0 ? 1 : 3;
+          else attending[i].dir = dy > 0 ? 2 : 0;
+        }
+      }
+    }
+    return;
+  }
+
+  // Phase: circle — agents huddle, CEO speaks
+  if (G.teamBuildingPhase === 'circle') {
+    G.teamBuildingTimer -= dt;
+    for (const a of attending) {
+      a.bobY = Math.sin(a.frame * 0.06 + a.id) * 1;
+      a.state = 'idle';
+    }
+    if (G.teamBuildingTimer <= 60) {
+      G.teamBuildingPhase = 'cheer';
+      for (const a of attending) {
+        const cheer = STANDUP_CHEERS[Math.floor(Math.random() * STANDUP_CHEERS.length)];
+        a.say(cheer, 60);
+      }
+    }
+    return;
+  }
+
+  // Phase: cheer — jumping, then end
+  if (G.teamBuildingPhase === 'cheer') {
+    G.teamBuildingTimer -= dt;
+    for (const a of attending) {
+      a.bobY = -Math.abs(Math.sin((G.gameTick + a.id * 5) * 0.15)) * 6;
+    }
+  }
 
   if (G.teamBuildingTimer <= 0) {
     // Team building complete — boost all agents
     G.teamBuildingActive = false;
     G.teamBuildingTimer = 0;
+    G.teamBuildingPhase = null;
+    G.standupCenter = null;
 
     for (const a of G.agents) {
-      a.inMeeting = false;
+      if (a.inMeeting) {
+        a.inMeeting = false;
+        a.bobY = 0;
+        a.state = 'idle';
+      }
+      // Everyone gets the boost (even those who stayed serving customers)
       a.onTeamBuilding();
     }
 
     // CEO finishes meeting too
     if (G.ceo) {
       G.ceo.inMeeting = false;
+      G.ceo.bobY = 0;
       G.ceo.state = 'idle';
       G.ceo.task = null;
     }
@@ -896,6 +1089,7 @@ function updateTeamBuilding(dt) {
 export function startTeamBuilding() {
   if (G.teamBuildingActive) return false;
   if (!G.ceo) return false;
+  if (G.standupActive) return false; // don't overlap with standup
 
   const hasMeeting = findRoomByType('meeting');
   if (!hasMeeting) {
@@ -905,6 +1099,12 @@ export function startTeamBuilding() {
 
   G.teamBuildingActive = true;
   G.teamBuildingTimer = ALIGNMENT.team_building_ticks;
+  G.teamBuildingPhase = 'gather';
+
+  // Store meeting room center for circle formation
+  const cx = hasMeeting.x + Math.floor(hasMeeting.w / 2);
+  const cy = hasMeeting.y + Math.floor(hasMeeting.h / 2);
+  G.standupCenter = { x: cx, y: cy };
 
   // CEO leads the meeting
   G.ceo.inMeeting = true;
@@ -913,13 +1113,14 @@ export function startTeamBuilding() {
     G.ceo.task.assignedAgents = G.ceo.task.assignedAgents.filter(w => w !== G.ceo);
     G.ceo.task = null;
   }
-  G.ceo.state = 'working';
+  G.ceo.state = 'walking';
   G.ceo.say(SPEECH_TEAM_BUILDING[Math.floor(Math.random() * SPEECH_TEAM_BUILDING.length)], 200);
   G.ceo.moveToRoom(hasMeeting.id);
 
-  // All agents join the meeting (pull from work!)
+  // All agents join the meeting — except those serving visitors
   for (const a of G.agents) {
     if (a.roleKey === 'ceo') continue;
+    if (a._servingVisitor) continue; // don't abandon customers!
     a.inMeeting = true;
     // Release their current task
     if (a.task) {
@@ -937,7 +1138,7 @@ export function startTeamBuilding() {
 }
 
 // ─── Visitors ───────────────────────────────────────────────
-const PATIENCE_DRAIN = { client: 0.0003, candidate: 0.0002, walkin: 0.0004 };
+const PATIENCE_DRAIN = { client: 0.0003, candidate: 0.0002, walkin: 0.0004, customer: 0.0003 };
 const MAX_VISITORS = 6;
 
 function spawnVisitor(type, targetRoom) {
@@ -1018,10 +1219,14 @@ function tickVisitors(dt) {
   G.visitors = G.visitors.filter(v => v.state !== 'gone');
 
   // 6. Spawn new visitors from events
-  if (G.reputation > 30 && G.visitors.length < MAX_VISITORS) {
-    const walkinChance = (G.reputation - 30) / 70 * (1 / 600);
+  const walkinThreshold = findRoomByType('shopfront') ? 15 : 30;
+  if (G.reputation > walkinThreshold && G.visitors.length < MAX_VISITORS) {
+    const companyDef = COMPANY_TYPES[G.companyType] || {};
+    const walkinMult = companyDef.bonuses?.walkinMultiplier || 1.0;
+    const walkinChance = (G.reputation - walkinThreshold) / (100 - walkinThreshold) * (1 / 600) * walkinMult;
     if (Math.random() < walkinChance * dt) {
-      spawnVisitor('walkin', null);
+      const hasShopfront = !!findRoomByType('shopfront');
+      spawnVisitor(hasShopfront ? 'customer' : 'walkin', hasShopfront ? 'shopfront' : null);
     }
   }
 }
@@ -1031,19 +1236,34 @@ function applyVisitorOutcome(v) {
   const verySatisfied = v.satisfaction > 0.8;
   const angry = v.satisfaction <= 0.35;
 
-  if (v.type === 'client') {
-    // Find the most recent project to adjust quality
-    const recentProject = G.projects.find(p =>
-      p.state === 'in_progress' || p.state === 'waiting'
-    );
-    if (recentProject) {
-      if (verySatisfied) {
-        recentProject.qualityScore = Math.min(1, (recentProject.qualityScore || 0.5) + 0.2);
-        G.reputation = Math.min(100, G.reputation + 1);
-      } else if (satisfied) {
-        recentProject.qualityScore = Math.min(1, (recentProject.qualityScore || 0.5) + 0.1);
-      } else if (angry) {
-        recentProject.qualityScore = Math.max(0, (recentProject.qualityScore || 0.5) - 0.15);
+  if (v.type === 'client' || v.type === 'customer') {
+    // Customer purchase — direct sale revenue with money particles
+    if (v.type === 'customer' && satisfied) {
+      const saleAmount = Math.round(80 + Math.random() * 120 + (verySatisfied ? 100 : 0));
+      G.money += saleAmount;
+      G.totalRevenue += saleAmount;
+      G.reputation = Math.min(100, G.reputation + (verySatisfied ? 1 : 0.3));
+      // Green money particles at visitor position
+      const s = toScreen(v.x, v.y);
+      for (let i = 0; i < 5; i++) {
+        const p = createParticle(s.x, s.y, 'money');
+        p.text = i === 0 ? `+$${saleAmount}` : '+$';
+        G.particles.push(p);
+      }
+    } else {
+      // Client visitors adjust project quality
+      const recentProject = G.projects.find(p =>
+        p.state === 'in_progress' || p.state === 'waiting'
+      );
+      if (recentProject) {
+        if (verySatisfied) {
+          recentProject.qualityScore = Math.min(1, (recentProject.qualityScore || 0.5) + 0.2);
+          G.reputation = Math.min(100, G.reputation + 1);
+        } else if (satisfied) {
+          recentProject.qualityScore = Math.min(1, (recentProject.qualityScore || 0.5) + 0.1);
+        } else if (angry) {
+          recentProject.qualityScore = Math.max(0, (recentProject.qualityScore || 0.5) - 0.15);
+        }
       }
     }
     G.visitorStats.totalServed++;
@@ -1072,8 +1292,9 @@ function applyVisitorOutcome(v) {
 // Called from spawnProjects when a new project is created
 export function spawnClientVisitor() {
   if (G.visitors.length >= MAX_VISITORS) return;
+  const hasShopfront = !!findRoomByType('shopfront');
   const hasSalesRoom = !!findRoomByType('sales');
-  spawnVisitor('client', hasSalesRoom ? 'sales' : 'lobby');
+  spawnVisitor('client', hasShopfront ? 'shopfront' : hasSalesRoom ? 'sales' : 'lobby');
 }
 
 // Called when HR hiring round project is spawned
@@ -1095,13 +1316,15 @@ export function simulationTick(dt) {
 
   // Team building progress
   updateTeamBuilding(dt);
+  // Weekly standup progress
+  updateStandup(dt);
 
   // Update agents
   for (const agent of G.agents) agent.update(dt);
 
-  // Project management (skip task assignment during team building)
+  // Project management (skip task assignment during meetings)
   updateProjects(dt);
-  if (!G.teamBuildingActive) {
+  if (!G.teamBuildingActive && !G.standupActive) {
     assignTasks();
   }
   spawnProjects(dt);
